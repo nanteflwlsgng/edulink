@@ -1,0 +1,9 @@
+body {
+    @apply font-poppins;
+  }
+  
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
