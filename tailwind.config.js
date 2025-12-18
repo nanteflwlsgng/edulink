@@ -8,6 +8,9 @@ export default {
     extend: {
       fontFamily: {
         poppins: ["Poppins", "sans-serif"],
+        orange: ['OrangeAvenue', 'sans-serif'],
+        orangeOutline: ['OrangeAvenueOutline', 'sans-serif'],
+        avenueX: ['AvenueX', 'sans-serif'],
       },
     },
   },

@@ -1,208 +1,198 @@
-// src/pages/AccountPage.jsx
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
+import { ArrowLeft, X, Check, ChevronRight } from "lucide-react";
 
 export default function AccountPage() {
-  const contentRef = useRef(null);
+  const containerRef = useRef(null);
   const navigate = useNavigate();
-
-  // --- STATE DE NAVIGATION ---
   const [view, setView] = useState("selection"); // 'selection' | 'student' | 'school'
 
-  // --- ANIMATION D'ENTRÉE (ON MOUNT) ---
+  // --- PARALLAX DE FOND (SIMPLE) ---
   useEffect(() => {
-    // La page descend subitement d'en haut au chargement
-    gsap.fromTo(
-      contentRef.current,
-      { y: "-100%" }, 
-      { y: "0%", duration: 0.5, ease: "circ.inOut" }
-    );
+    const handleMouseMove = (e) => {
+      const { clientX, clientY } = e;
+      const xPos = (clientX / window.innerWidth - 0.5) * 20;
+      const yPos = (clientY / window.innerHeight - 0.5) * 20;
+
+      gsap.to(".parallax-bg", {
+        x: xPos,
+        y: yPos,
+        duration: 1,
+        ease: "power2.out",
+        stagger: 0.1
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
 
-  // Fonction pour fermer la page (retour accueil)
   const handleClose = () => {
-    // On peut animer la sortie avant de naviguer
-    gsap.to(contentRef.current, {
-      y: "-100%",
-      duration: 0.5,
-      ease: "power2.in",
-      onComplete: () => navigate("/") // Retour à l'accueil
-    });
-  };
-
-  const handleBack = () => {
-    setView("selection");
+    gsap.to(containerRef.current, { opacity: 0, duration: 0.4, onComplete: () => navigate("/") });
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden bg-white relative">
+    <div ref={containerRef} className="fixed inset-0 w-full h-full bg-[#fdfdfd] z-[100] overflow-hidden font-poppins">
       
-      {/* BOUTON FERMER (RETOUR ACCUEIL) */}
-      <button
-        onClick={handleClose}
-        className="fixed top-6 right-8 z-[110] bg-white/20 backdrop-blur-sm p-2 rounded-full text-gray-500 hover:bg-red-50 hover:text-[#370669] transition-all shadow-lg"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        
+      {/* ÉLÉMENTS DE FOND PARALLAX */}
+      <div className="parallax-bg absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-slate-100 rounded-full blur-[120px] opacity-60" />
+      <div className="parallax-bg absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-slate-100 rounded-full blur-[100px] opacity-60" />
+
+      {/* BOUTON FERMER */}
+      <button onClick={handleClose} className="fixed top-8 right-8 z-[120] p-3 hover:rotate-90 transition-transform duration-300">
+        <X className="w-6 h-6 text-slate-400" />
       </button>
 
-      {/* CONTENEUR PRINCIPAL ANIMÉ */}
-      <div ref={contentRef} className="w-full h-full relative">
-        
-        {view === "selection" && (
-          <RoleSelection onSelect={(role) => setView(role)} />
-        )}
-
-        {view === "student" && (
-          <StudentForm onBack={handleBack} />
-        )}
-
-        {view === "school" && (
-          <SchoolForm onBack={handleBack} />
-        )}
-      </div>
+      {view === "selection" ? (
+        <RoleSelection onSelect={(role) => setView(role)} />
+      ) : (
+        <MinimalForm 
+          type={view} 
+          onBack={() => setView("selection")} 
+          theme={view === "student" ? "#18B49C" : "#27b6d8"} 
+        />
+      )}
     </div>
   );
 }
 
 /* =========================================================================
-   COMPOSANT 1 : SÉLECTION DU RÔLE (SPLIT SCREEN)
+   SÉLECTION DES RÔLES (Simple Parallax & Hover)
    ========================================================================= */
 function RoleSelection({ onSelect }) {
+  return (
+    <div className="relative w-full h-full flex flex-col md:flex-row">
+      <RoleCard 
+        title="Étudiant" 
+        img="/etudiant1.png" 
+        label="STUDENT"
+        color="#18B49C"
+        onClick={() => onSelect("student")} 
+      />
+      <div className="hidden md:block w-[1px] h-32 self-center bg-gray-100 z-10" />
+      <RoleCard 
+        title="Établissement" 
+        img="/professor.png" 
+        label="SCHOOL"
+        color="#27b6d8"
+        onClick={() => onSelect("school")} 
+      />
+    </div>
+  );
+}
+
+function RoleCard({ title, img, label, color, onClick }) {
+  const cardRef = useRef(null);
+
+  // Parallax interne au hover
+  const onMouseMove = (e) => {
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    
+    // gsap.to(cardRef.current.querySelector(".role-img"), { x: x * 30, y: y * 30, duration: 0.6 });
+    gsap.to(cardRef.current.querySelector(".role-label"), { x: -x * 50, y: -y * 50, duration: 0.6 });
+  };
+
+  return (
+    <div 
+      ref={cardRef}
+      onMouseMove={onMouseMove}
+      onClick={onClick}
+      className="flex-1 relative flex flex-col items-center justify-center cursor-pointer group overflow-hidden"
+    >
+      <span className="role-label absolute text-[12vw] font-bold text-slate-100 select-none z-0 transition-colors group-hover:text-slate-200">
+        {label}
+      </span>
+      <div className="role-img relative z-10 w-48 h-48 md:w-80 md:h-80 mb-6 transition-transform duration-500 group-hover:scale-105">
+        <img src={img} alt={title} className="w-full h-full object-contain drop-shadow-2xl" />
+      </div>
+      <h2 className="relative z-10 text-4xl font-orange text-slate-900 group-hover:text-[var(--hover-color)] transition-colors" style={{"--hover-color": color}}>
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/* =========================================================================
+   FORMULAIRE (Simple & Fluide)
+   ========================================================================= */
+function MinimalForm({ type, onBack, theme }) {
+  const [step, setStep] = useState(1);
+  const formRef = useRef(null);
+
+  // Animation d'entrée du formulaire complet
   useEffect(() => {
-    gsap.fromTo(".role-content",
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.5, delay: 0.6, stagger: 0.2 }
-    );
+    gsap.fromTo(formRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
   }, []);
 
-  return (
-    <div className="flex flex-col md:flex-row w-full h-full">
-      {/* Côté Étudiant */}
-      <div onClick={() => onSelect("student")} className="relative flex-1 h-full bg-[#370669] group cursor-pointer overflow-hidden flex flex-col items-center justify-center p-10 hover:flex-[1.3] transition-all duration-500">
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-        <div className="role-content z-10 text-center flex flex-col items-center">
-            <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform"><img src="/etudiant.png" alt="student" className="h-24 w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}/></div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Étudiant</h2>
-            <p className="text-white/90 text-sm max-w-sm font-medium">Je cherche une formation.</p>
-            <span className="mt-8 px-8 py-3 bg-white text-[#18b49c] text-sm font-bold rounded-full opacity-0 transform translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">S'inscrire / Se connecter</span>
-        </div>
-      </div>
-
-      {/* Côté Établissement */}
-      <div onClick={() => onSelect("school")} className="relative flex-1 h-full bg-[#370669] group cursor-pointer overflow-hidden flex flex-col items-center justify-center p-10 hover:flex-[1.3] transition-all duration-500">
-         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
-        <div className="role-content z-10 text-center flex flex-col items-center">
-            <div className="text-6xl mb-4 transform group-hover:scale-110 transition-transform"><img src="/director.png" alt="student" className="h-20 w-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}/></div>
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">Établissement</h2>
-            <p className="text-white/90 text-sm max-w-sm font-medium">Je veux recruter.</p>
-            <span className="mt-8 px-8 py-3 bg-white text-[#27b6d8] text-sm rounded-full font-bold opacity-0 transform translate-y-8 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">Créer un compte / Se connecter</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* =========================================================================
-   COMPOSANT 2 : FORMULAIRE ÉTUDIANT
-   ========================================================================= */
-function StudentForm({ onBack }) {
-  const [step, setStep] = useState(1);
-  const nextStep = (e) => { e.preventDefault(); setStep(step + 1); };
-  const prevStep = () => setStep(step - 1);
+  // Animation simple lors du changement d'étape
+  const nextStep = () => {
+    gsap.to(".step-anim", { opacity: 0, x: -20, duration: 0.3, onComplete: () => {
+      setStep(step + 1);
+      gsap.fromTo(".step-anim", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.4 });
+    }});
+  };
 
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#18b49c] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-8 md:p-12 animate-fadeIn">
-        <button onClick={onBack} className="text-gray-400 hover:text-[#18b49c] font-semibold text-sm mb-6 flex items-center gap-2 transition-colors">← Changer de profil</button>
+    <div ref={formRef} className="absolute inset-0 flex items-center justify-center bg-white z-50">
+      <div className="w-full max-w-lg px-8">
         
-        <div className="mb-6"><h2 className="text-3xl font-bold text-[#18b49c]">Inscription Étudiant</h2><p className="text-gray-500 text-sm mt-1">Étape {step} sur 3</p></div>
-        <div className="w-full h-2 bg-gray-100 rounded-full mb-8 overflow-hidden"><div className="h-full bg-[#18b49c] transition-all duration-500" style={{ width: `${(step / 3) * 100}%` }}></div></div>
+        {/* Header */}
+        <button onClick={onBack} className="mb-12 flex items-center gap-2 text-xs font-bold tracking-widest text-gray-400 hover:text-black transition-colors uppercase">
+          <ArrowLeft className="w-4 h-4" /> Retour
+        </button>
 
-        <form>
-          {step === 1 && (
-            <div className="space-y-5 animate-slideIn">
-              <div className="grid grid-cols-2 gap-4"><InputGroup label="Nom" /><InputGroup label="Prénom" /></div>
-              <InputGroup label="Date de naissance" type="date" />
-              <InputGroup label="Téléphone" type="tel" />
-              <div className="pt-6 flex justify-end"><ButtonNext onClick={nextStep}>Suivant</ButtonNext></div>
-            </div>
-          )}
-          {step === 2 && (
-            <div className="space-y-5 animate-slideIn">
-              <InputGroup label="Pseudo" />
-              <InputGroup label="Email" type="email" />
-              <InputGroup label="Mot de passe" type="password" />
-              <div className="pt-6 flex justify-between"><ButtonPrev onClick={prevStep} /><ButtonNext onClick={nextStep}>Suivant</ButtonNext></div>
-            </div>
-          )}
-          {step === 3 && (
-            <div className="space-y-6 animate-slideIn">
-              <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400 text-sm text-blue-800">Domaine d'intérêt (Optionnel)</div>
-              <select className="w-full border p-3 rounded-lg outline-none"><option>Choisir...</option><option>Info</option><option>Commerce</option></select>
-              <div className="pt-6 flex justify-between"><ButtonPrev onClick={prevStep} /><button className="bg-[#18b49c] text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-all">Terminer</button></div>
-            </div>
-          )}
-        </form>
+        <div className="step-anim">
+          <p className="text-[10px] font-bold tracking-[0.3em] uppercase mb-2" style={{ color: theme }}>Étape 0{step}</p>
+          <h2 className="text-4xl font-orange text-slate-900 mb-10">
+            {step === 1 ? "Vos identifiants." : "Presque fini."}
+          </h2>
+
+          <div className="space-y-8">
+            {step === 1 ? (
+              <>
+                <SimpleInput label="Nom complet" theme={theme} />
+                <SimpleInput label="Adresse Email" type="email" theme={theme} />
+              </>
+            ) : (
+              <>
+                <SimpleInput label="Mot de passe" type="password" theme={theme} />
+                <SimpleInput label="Ville" theme={theme} />
+              </>
+            )}
+          </div>
+
+          <div className="mt-12 flex justify-end">
+            <button 
+              onClick={step < 2 ? nextStep : undefined}
+              className="px-10 py-4 rounded-full bg-slate-900 text-white flex items-center gap-3 hover:scale-105 active:scale-95 transition-all"
+            >
+              <span className="text-xs font-bold uppercase tracking-widest">
+                {step === 2 ? "Valider" : "Suivant"}
+              </span>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-/* =========================================================================
-   COMPOSANT 3 : FORMULAIRE ÉTABLISSEMENT
-   ========================================================================= */
-function SchoolForm({ onBack }) {
-  const [step, setStep] = useState(1);
-  const nextStep = (e) => { e.preventDefault(); setStep(step + 1); };
-  const prevStep = () => setStep(step - 1);
-
+function SimpleInput({ label, type = "text", theme }) {
   return (
-    <div className="h-full w-full overflow-y-auto bg-[#27b6d8] flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-3xl rounded-2xl shadow-2xl p-8 md:p-12 animate-fadeIn">
-        <button onClick={onBack} className="text-gray-400 hover:text-[#27b6d8] font-semibold text-sm mb-6 flex items-center gap-2 transition-colors">← Changer de profil</button>
-
-        <div className="mb-6"><h2 className="text-3xl font-bold text-[#27b6d8]">Espace Établissement</h2><p className="text-gray-500 text-sm mt-1">Étape {step} sur 3</p></div>
-        <div className="w-full h-2 bg-gray-100 rounded-full mb-8 overflow-hidden"><div className="h-full bg-[#27b6d8] transition-all duration-500" style={{ width: `${(step / 3) * 100}%` }}></div></div>
-
-        <form>
-          {step === 1 && (
-            <div className="space-y-5 animate-slideIn">
-              <InputGroup label="Nom Établissement" />
-              <div className="grid grid-cols-2 gap-4"><InputGroup label="Type" /><InputGroup label="Ville" /></div>
-              <div className="pt-6 flex justify-end"><ButtonNext onClick={nextStep} color="bg-[#27b6d8]">Suivant</ButtonNext></div>
-            </div>
-          )}
-          {step === 2 && (
-            <div className="space-y-5 animate-slideIn">
-              <InputGroup label="Admin User" />
-              <InputGroup label="Email Pro" type="email" />
-              <div className="grid grid-cols-2 gap-4"><InputGroup label="Password" type="password" /><InputGroup label="Confirm" type="password" /></div>
-              <div className="pt-6 flex justify-between"><ButtonPrev onClick={prevStep} /><ButtonNext onClick={nextStep} color="bg-[#27b6d8]">Suivant</ButtonNext></div>
-            </div>
-          )}
-          {step === 3 && (
-            <div className="space-y-6 animate-slideIn">
-              <h3 className="font-bold border-b pb-2">Identité visuelle</h3>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="border-2 dashed p-6 text-center cursor-pointer hover:bg-blue-50 text-gray-400">Logo</div>
-                <div className="border-2 dashed p-6 text-center cursor-pointer hover:bg-blue-50 text-gray-400">Cover</div>
-              </div>
-              <div className="pt-6 flex justify-between"><ButtonPrev onClick={prevStep} /><button className="bg-[#27b6d8] text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition-all">Valider</button></div>
-            </div>
-          )}
-        </form>
-      </div>
+    <div className="relative w-full">
+      <input 
+        type={type} 
+        placeholder=" "
+        className="peer w-full bg-transparent border-b border-gray-200 py-3 text-lg outline-none focus:border-slate-900 transition-all"
+      />
+      <label className="absolute left-0 top-3 text-gray-400 pointer-events-none transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-[:not(:placeholder-shown)]:-top-5 peer-[:not(:placeholder-shown)]:text-[10px]">
+        {label}
+      </label>
+      <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-slate-900 transition-all duration-500 peer-focus:w-full" style={{ backgroundColor: theme }} />
     </div>
   );
 }
-
-// Helpers UI
-const InputGroup = ({ label, type = "text" }) => (
-  <div className="space-y-1 w-full"><label className="text-xs font-bold text-gray-500 ml-1 uppercase">{label}</label><input type={type} className="w-full border rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-gray-200 outline-none" /></div>
-);
-const ButtonNext = ({ onClick, children, color = "bg-[#18b49c]" }) => <button onClick={onClick} className={`${color} text-white px-6 py-2 rounded-full font-bold hover:brightness-110`}>{children}</button>;
-const ButtonPrev = ({ onClick }) => <button type="button" onClick={onClick} className="text-gray-500 font-semibold px-4 py-2 hover:text-gray-800">Précédent</button>;

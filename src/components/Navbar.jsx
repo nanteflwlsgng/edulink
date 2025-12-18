@@ -6,11 +6,11 @@ export default function Navbar() {
       {/* Logo */}
       <div className="flex items-center gap-2">
         <img src="/icons8-éducation-64 1.png" alt="Logo" className="h-10 w-10" />
-        <span className="text-base font-bold text-[#370669]">EduLink</span>
+        <span className="text-lg font-bold text-[#370669]">EduLink</span>
       </div>
 
       {/* Liens du milieu */}
-      <div className="hidden md:flex gap-4 text-gray-900 text-sm">
+      <div className="hidden md:flex gap-4 text-gray-900 text-lg">
         <Link to="/" className="hover:text-[#370669] transition-colors">Accueil</Link>
         <Link to="/formations" className="hover:text-[#370669] transition-colors">Formations</Link>
         <Link to="/etablissements" className="hover:text-[#370669] transition-colors">Établissements</Link>
@@ -20,7 +20,7 @@ export default function Navbar() {
       <div className="transition-transform transform hover:scale-105">
         <Link
           to="/compte" // Redirige vers la nouvelle page
-          className="px-4 py-2 text-sm bg-[#683cc7] font-semibold text-white rounded-full hover:bg-[#532e9e] transition-colors"
+          className="px-4 py-2 text-base bg-[#370669] font-semibold text-white rounded-full"
         >
           Mon compte
         </Link>

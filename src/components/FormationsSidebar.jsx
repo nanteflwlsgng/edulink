@@ -23,7 +23,7 @@ export const FormationsSidebar = ({ filters, counts, onFilterChange, onReset }) 
           {hasActiveFilters && (
             <button 
               onClick={onReset} 
-              className="text-xs text-[#683cc7] hover:text-[#532e9e] font-semibold flex items-center gap-1 hover:underline transition-all"
+              className="text-xs text-[#370669] hover:text-[#532e9e] font-semibold flex items-center gap-1 hover:underline transition-all"
             >
               <RotateCcw className="w-3 h-3" /> Réinitialiser
             </button>
