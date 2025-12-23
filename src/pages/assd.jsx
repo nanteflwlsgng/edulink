@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import { ArrowLeft, X, Check, ChevronRight } from "lucide-react";
-import { useAuth } from "../context/AuthContext";
+import { ArrowLeft, X, Check, ChevronRight, LogIn } from "lucide-react";
+import { useAuth } from "../context/AuthContext"; // Import du contexte
 
 export default function AccountPage() {
   const containerRef = useRef(null);
   const navigate = useNavigate();
-  const [view, setView] = useState("selection"); // 'selection' | 'student' | 'school'
+  const [view, setView] = useState("selection");
 
+  // --- PARALLAX DE FOND (INCHANGÉ) ---
   useEffect(() => {
     const handleMouseMove = (e) => {
       const { clientX, clientY } = e;
@@ -16,9 +17,14 @@ export default function AccountPage() {
       const yPos = (clientY / window.innerHeight - 0.5) * 20;
 
       gsap.to(".parallax-bg", {
-        x: xPos, y: yPos, duration: 1, ease: "power2.out", stagger: 0.1
+        x: xPos,
+        y: yPos,
+        duration: 1,
+        ease: "power2.out",
+        stagger: 0.1
       });
     };
+
     window.addEventListener("mousemove", handleMouseMove);
     return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
@@ -29,9 +35,12 @@ export default function AccountPage() {
 
   return (
     <div ref={containerRef} className="fixed inset-0 w-full h-full bg-[#fdfdfd] z-[100] overflow-hidden font-poppins">
+      
+      {/* ÉLÉMENTS DE FOND PARALLAX */}
       <div className="parallax-bg absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-slate-100 rounded-full blur-[120px] opacity-60" />
       <div className="parallax-bg absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-slate-100 rounded-full blur-[100px] opacity-60" />
 
+      {/* BOUTON FERMER */}
       <button onClick={handleClose} className="fixed top-8 right-8 z-[120] p-3 hover:rotate-90 transition-transform duration-300">
         <X className="w-6 h-6 text-slate-400" />
       </button>
@@ -39,7 +48,7 @@ export default function AccountPage() {
       {view === "selection" ? (
         <RoleSelection onSelect={(role) => setView(role)} />
       ) : (
-        <AuthForm 
+        <MinimalForm 
           type={view} 
           onBack={() => setView("selection")} 
           theme={view === "student" ? "#18B49C" : "#27b6d8"} 
@@ -49,71 +58,94 @@ export default function AccountPage() {
   );
 }
 
+// ... RoleSelection et RoleCard restent INCHANGÉS (copier ton code précédent ici) ...
+/* (Je ne remets pas RoleSelection ici pour économiser l'espace, garde le tien tel quel) */
+/* =========================================================================
+   SÉLECTION DES RÔLES (Simple Parallax & Hover)
+   ========================================================================= */
 function RoleSelection({ onSelect }) {
   return (
     <div className="relative w-full h-full flex flex-col md:flex-row">
-      <RoleCard title="Étudiant" img="/etudiant1.png" label="STUDENT" color="#18B49C" onClick={() => onSelect("student")} />
+      <RoleCard 
+        title="Étudiant" 
+        img="/etudiant1.png" 
+        label="STUDENT"
+        color="#18B49C"
+        onClick={() => onSelect("student")} 
+      />
       <div className="hidden md:block w-[1px] h-32 self-center bg-gray-100 z-10" />
-      <RoleCard title="Établissement" img="/professor.png" label="SCHOOL" color="#27b6d8" onClick={() => onSelect("school")} />
+      <RoleCard 
+        title="Établissement" 
+        img="/professor.png" 
+        label="SCHOOL"
+        color="#27b6d8"
+        onClick={() => onSelect("school")} 
+      />
     </div>
   );
 }
 
 function RoleCard({ title, img, label, color, onClick }) {
   const cardRef = useRef(null);
+
+  // Parallax interne au hover
   const onMouseMove = (e) => {
     const rect = cardRef.current.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width - 0.5;
     const y = (e.clientY - rect.top) / rect.height - 0.5;
+    
+    // gsap.to(cardRef.current.querySelector(".role-img"), { x: x * 30, y: y * 30, duration: 0.6 });
     gsap.to(cardRef.current.querySelector(".role-label"), { x: -x * 50, y: -y * 50, duration: 0.6 });
   };
 
   return (
-    <div ref={cardRef} onMouseMove={onMouseMove} onClick={onClick} className="flex-1 relative flex flex-col items-center justify-center cursor-pointer group overflow-hidden">
-      <span className="role-label absolute text-[12vw] font-bold text-slate-100 select-none z-0 transition-colors group-hover:text-slate-200">{label}</span>
+    <div 
+      ref={cardRef}
+      onMouseMove={onMouseMove}
+      onClick={onClick}
+      className="flex-1 relative flex flex-col items-center justify-center cursor-pointer group overflow-hidden"
+    >
+      <span className="role-label absolute text-[12vw] font-bold text-slate-100 select-none z-0 transition-colors group-hover:text-slate-200">
+        {label}
+      </span>
       <div className="role-img relative z-10 w-48 h-48 md:w-80 md:h-80 mb-6 transition-transform duration-500 group-hover:scale-105">
         <img src={img} alt={title} className="w-full h-full object-contain drop-shadow-2xl" />
       </div>
-      <h2 className="relative z-10 text-4xl font-orange text-slate-900 group-hover:text-[var(--hover-color)] transition-colors" style={{"--hover-color": color}}>{title}</h2>
+      <h2 className="relative z-10 text-4xl font-orange text-slate-900 group-hover:text-[var(--hover-color)] transition-colors" style={{"--hover-color": color}}>
+        {title}
+      </h2>
     </div>
   );
 }
 
-// === LE COMPOSANT DU FORMULAIRE COMPLET ===
-function AuthForm({ type, onBack, theme }) {
-  const { login, register } = useAuth();
+/* =========================================================================
+   FORMULAIRE (Connecté au Context & LocalStorage)
+   ========================================================================= */
+function MinimalForm({ type, onBack, theme }) {
   const navigate = useNavigate();
+  const { login, register } = useAuth(); // Hook personnalisé
+  
+  const [isLoginMode, setIsLoginMode] = useState(false); // Toggle entre Login et Register
+  const [step, setStep] = useState(1);
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", city: "" });
+  const [error, setError] = useState("");
   const formRef = useRef(null);
 
-  const [isLogin, setIsLogin] = useState(false); // Toggle Login/Register
-  const [step, setStep] = useState(1);
-  const [error, setError] = useState("");
-  
-  // Données du formulaire
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    city: ""
-  });
-
+  // Animation d'entrée
   useEffect(() => {
     gsap.fromTo(formRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(""); // Reset erreur à la saisie
+    setError(""); // Reset erreur quand l'utilisateur tape
   };
 
-  const handleNextOrSubmit = () => {
-    setError("");
-
-    // --- LOGIQUE LOGIN ---
-    if (isLogin) {
+  const handleNextOrSubmit = async () => {
+    // LOGIQUE DE CONNEXION
+    if (isLoginMode) {
       if (!formData.email || !formData.password) {
         setError("Veuillez remplir tous les champs.");
-        shakeForm();
         return;
       }
       const res = login(formData.email, formData.password);
@@ -126,20 +158,17 @@ function AuthForm({ type, onBack, theme }) {
       return;
     }
 
-    // --- LOGIQUE REGISTER ---
-    // Validation Etape 1
+    // LOGIQUE D'INSCRIPTION (Multi-étapes)
     if (step === 1) {
       if (!formData.name || !formData.email) {
-        setError("Veuillez remplir le nom et l'email.");
+        setError("Champs obligatoires manquants.");
         shakeForm();
         return;
       }
       nextStepAnim();
-    } 
-    // Validation Etape 2 et Submit
-    else {
+    } else {
       if (!formData.password || !formData.city) {
-        setError("Veuillez remplir le mot de passe et la ville.");
+        setError("Champs obligatoires manquants.");
         shakeForm();
         return;
       }
@@ -153,9 +182,11 @@ function AuthForm({ type, onBack, theme }) {
     }
   };
 
-  // Animations GSAP
-  const shakeForm = () => gsap.to(".step-anim", { x: [-10, 10, -10, 10, 0], duration: 0.4 });
-  
+  // Petite animation de secousse en cas d'erreur
+  const shakeForm = () => {
+    gsap.to(".step-anim", { x: [-10, 10, -10, 10, 0], duration: 0.4 });
+  };
+
   const nextStepAnim = () => {
     gsap.to(".step-anim", { opacity: 0, x: -20, duration: 0.3, onComplete: () => {
       setStep(step + 1);
@@ -165,7 +196,7 @@ function AuthForm({ type, onBack, theme }) {
 
   const toggleMode = () => {
     gsap.to(".step-anim", { opacity: 0, y: 10, duration: 0.2, onComplete: () => {
-        setIsLogin(!isLogin);
+        setIsLoginMode(!isLoginMode);
         setStep(1);
         setError("");
         gsap.fromTo(".step-anim", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.3 });
@@ -176,44 +207,47 @@ function AuthForm({ type, onBack, theme }) {
     <div ref={formRef} className="absolute inset-0 flex items-center justify-center bg-white z-50">
       <div className="w-full max-w-lg px-8">
         
-        {/* Nav Header */}
-        <div className="flex justify-between items-center mb-10">
+        {/* Header Navigation */}
+        <div className="flex justify-between items-center mb-12">
             <button onClick={onBack} className="flex items-center gap-2 text-xs font-bold tracking-widest text-gray-400 hover:text-black transition-colors uppercase">
             <ArrowLeft className="w-4 h-4" /> Retour
             </button>
-            <button onClick={toggleMode} className="text-xs font-bold tracking-widest text-[#370669] border-b border-[#370669] pb-0.5 hover:opacity-70 transition-opacity uppercase">
-                {isLogin ? "Créer un compte" : "J'ai déjà un compte"}
+            
+            {/* Toggle Mode Login/Register */}
+            <button onClick={toggleMode} className="text-xs font-bold tracking-widest text-[#370669] hover:opacity-70 transition-opacity uppercase border-b border-[#370669] pb-0.5">
+                {isLoginMode ? "Créer un compte" : "Se connecter"}
             </button>
         </div>
 
         <div className="step-anim">
           <p className="text-[10px] font-bold tracking-[0.3em] uppercase mb-2" style={{ color: theme }}>
-            {isLogin ? "CONNEXION" : `ÉTAPE 0${step}`}
+            {isLoginMode ? "CONNEXION" : `ÉTAPE 0${step}`}
           </p>
           <h2 className="text-4xl font-orange text-slate-900 mb-2">
-            {isLogin ? "Heureux de vous revoir." : (step === 1 ? "Vos identifiants." : "Derniers détails.")}
+            {isLoginMode ? "Bon retour." : (step === 1 ? "Vos identifiants." : "Presque fini.")}
           </h2>
-          
-          {/* Zone Erreur */}
-          <div className="h-6 mb-6 text-red-500 text-xs font-bold uppercase tracking-wider">{error}</div>
+          {/* Zone d'erreur */}
+          <div className="h-6 mb-8 text-red-500 text-xs font-bold uppercase tracking-wider">{error}</div>
 
           <div className="space-y-8">
-            {isLogin ? (
+            {isLoginMode ? (
+                // FORMULAIRE LOGIN
                 <>
-                    <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
-                    <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
+                 <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
+                 <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
                 </>
             ) : (
+                // FORMULAIRE REGISTER
                 step === 1 ? (
-                    <>
-                        <SimpleInput name="name" label="Nom complet" theme={theme} value={formData.name} onChange={handleChange} />
-                        <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
-                    </>
+                <>
+                    <SimpleInput name="name" label="Nom complet" theme={theme} value={formData.name} onChange={handleChange} />
+                    <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
+                </>
                 ) : (
-                    <>
-                        <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
-                        <SimpleInput name="city" label="Ville" theme={theme} value={formData.city} onChange={handleChange} />
-                    </>
+                <>
+                    <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
+                    <SimpleInput name="city" label="Ville" theme={theme} value={formData.city} onChange={handleChange} />
+                </>
                 )
             )}
           </div>
@@ -221,12 +255,13 @@ function AuthForm({ type, onBack, theme }) {
           <div className="mt-12 flex justify-end">
             <button 
               onClick={handleNextOrSubmit}
-              className="px-10 py-4 rounded-full bg-slate-900 text-white flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-2xl"
+              className="px-10 py-4 rounded-full bg-slate-900 text-white flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-lg hover:shadow-xl"
             >
               <span className="text-xs font-bold uppercase tracking-widest">
-                {isLogin ? "Se connecter" : (step === 2 ? "Valider" : "Suivant")}
+                {isLoginMode ? "Se connecter" : (step === 2 ? "Valider" : "Suivant")}
               </span>
-              {(isLogin || step === 2) ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {!isLoginMode && step === 1 && <ChevronRight className="w-4 h-4" />}
+              {(isLoginMode || step === 2) && <Check className="w-4 h-4" />}
             </button>
           </div>
         </div>
