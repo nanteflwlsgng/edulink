@@ -252,10 +252,10 @@ const ProfessionalHome = () => {
               </p>
               <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <button className="px-8 py-3 bg-white text-[#370669] rounded-lg font-bold hover:bg-gray-100 transition-colors">
-                      Inscription Étudiant
+                      Inscription Étudiants
                   </button>
                   <button className="px-8 py-3 bg-transparent border border-white/30 text-white rounded-lg font-bold hover:bg-white/10 transition-colors">
-                      Partenaire École
+                      Partenaire Écoles
                   </button>
               </div>
           </div>
