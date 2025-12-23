@@ -8,7 +8,6 @@ import Formations from "./pages/formations";
 import Establishments from "./pages/Establishments";
 import Dashboard from "./pages/studentDashboard"; // 2. On importe le nouveau Dashboard
 import FormationDetailsPage from "./pages/formationDetailsPage";
-import StudentFormationDetails from "./pages/studentFormationDetails";
 
 // 3. On crée un Layout Racine qui englobe toute l'app
 // C'est lui qui distribue la "session" à toutes les pages via <Outlet />

@@ -7,15 +7,14 @@ import {
   ArrowRight, MessageSquare, Send, User, Lock
 } from "lucide-react";
 
-// --- IMPORTS CONTEXTE & COMPOSANTS ---
-import { useAuth } from "../context/AuthContext"; 
+// --- IMPORTS ---
+import { useAuth } from "../context/AuthContext"; // Le contexte d'auth
 import Navbar from "../components/Navbar"; 
-import StudentNavbar from "../components/StudentNavbar";
+import StudentNavbar from "../components/StudentNavbar"; // Navbar Étudiant
 import { MOCK_DATA } from "../dataformation";
 
-// --- SOUS-COMPOSANTS UI ---
+// --- SOUS-COMPOSANTS UI (Pour la propreté) ---
 
-// Barre de progression pour les notes
 const RatingBar = ({ star, percentage, count }) => (
   <div className="flex items-center gap-3 text-xs mb-1.5 animate-fadeIn">
     <span className="w-8 font-bold text-gray-500 flex items-center gap-1">
@@ -28,7 +27,6 @@ const RatingBar = ({ star, percentage, count }) => (
   </div>
 );
 
-// Carte d'un avis individuel
 const ReviewCard = ({ name, date, rating, comment, avatarColor }) => (
   <div className="border-b border-gray-50 py-6 last:border-0 last:pb-0">
     <div className="flex items-start gap-4">
@@ -55,7 +53,6 @@ const ReviewCard = ({ name, date, rating, comment, avatarColor }) => (
   </div>
 );
 
-// Élément de détail (Liste à puces riche)
 const DetailItem = ({ icon: Icon, label, value, isLink }) => (
     <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-md transition-all">
         <div className="p-2 bg-white rounded-full text-[#370669] shadow-sm"><Icon className="w-4 h-4"/></div>
@@ -72,35 +69,26 @@ const DetailItem = ({ icon: Icon, label, value, isLink }) => (
     </div>
 );
 
-// Phrase d'accroche
-const getCategoryHook = (category) => {
-  const hooks = {
-    'Informatique': "Devenez l'expert tech que les entreprises s'arrachent.",
-    'Marketing': "Maîtrisez les stratégies qui dominent le marché actuel.",
-    'Design': "Transformez votre créativité en une carrière durable.",
-    'Droit': "Plaidez pour votre avenir avec une formation d'excellence.",
-    'Business': "Développez le leadership nécessaire pour diriger demain.",
-    'default': "Boostez votre employabilité avec une formation reconnue."
-  };
-  return hooks[category] || hooks['default'];
-};
-
-// --- COMPOSANT PRINCIPAL ---
+// --- PAGE PRINCIPALE ---
 export default function FormationDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuth(); 
+  
+  // 1. RÉCUPÉRATION DE L'ÉTAT AUTH
+  const { user } = useAuth(); // "user" est null si invité, ou un objet si connecté
 
-  // États interactifs
+  // États locaux
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userRating, setUserRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
   
-  // Simulation de données
+  // Données
   const rawFormation = MOCK_DATA.find((f) => f.id.toString() === id);
 
   if (!rawFormation) return <div className="min-h-screen flex items-center justify-center text-slate-500">Formation introuvable.</div>;
 
+  // Enrichissement mock data
   const formation = {
     ...rawFormation,
     updatedAt: "Mis à jour il y a 2 jours",
@@ -109,7 +97,7 @@ export default function FormationDetailsPage() {
     mode: "Hybride",
     insertionRate: "94%", 
     description: "Cette formation offre une approche complète et immersive, conçue pour former les leaders de demain. Le cursus allie théorie académique rigoureuse et pratique professionnelle intense à travers des stages garantis.",
-    schoolDescription: "Fondée en 1985, notre établissement est un pilier de l'excellence académique dans la région. Avec un campus moderne de 5000m² et plus de 120 partenaires internationaux.",
+    schoolDescription: "Fondée en 1985, notre établissement est un pilier de l'excellence académique.",
     schoolEmail: "admission@ecole.com",
     schoolPhone: "+261 34 00 000 00",
     schoolWebsite: "www.ecole.com",
@@ -117,7 +105,7 @@ export default function FormationDetailsPage() {
     price: "4 500 000 Ar",
     paymentType: "/ an",
     schoolImage: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80", 
-    conditions: ["Baccalauréat ou équivalent", "Dossier scolaire complet", "Entretien de motivation"],
+    conditions: ["Baccalauréat", "Dossier", "Entretien"],
     reviews: {
         average: 4.8,
         total: 128,
@@ -129,30 +117,44 @@ export default function FormationDetailsPage() {
             { star: 1, percentage: 0, count: 0 },
         ],
         items: [
-            { id: 1, name: "Lucas M.", date: "Il y a 2 jours", rating: 5, comment: "Excellent cursus, très professionnalisant.", avatarColor: "bg-blue-500" },
-            { id: 2, name: "Sarah K.", date: "Il y a 1 semaine", rating: 4, comment: "Contenu dense mais passionnant.", avatarColor: "bg-purple-500" }
+            { id: 1, name: "Lucas M.", date: "Il y a 2 jours", rating: 5, comment: "Excellent cursus.", avatarColor: "bg-blue-500" },
+            { id: 2, name: "Sarah K.", date: "Il y a 1 semaine", rating: 4, comment: "Contenu dense.", avatarColor: "bg-purple-500" }
         ]
     }
   };
 
-  const hookPhrase = getCategoryHook(formation.category);
+  // --- LOGIQUES D'INTERACTION ---
 
-  // Gestionnaire de candidature
   const handleApply = () => {
-    if (isAuthenticated) {
-        alert(`Demande envoyée pour ${user.firstName} ! L'école vous contactera.`);
+    if (user) {
+        alert(`Candidature envoyée pour ${user.firstName} !`);
     } else {
-        // Redirection vers la page de compte (connexion) en gardant l'historique
         navigate("/compte", { state: { from: `/formations/${id}` } });
     }
   };
 
-  return (
-    <div className="min-h-screen text-slate-800 font-poppins selection:bg-[#18B49C] selection:text-white bg-[#f8f9fc]">
-      {/* 1. NAVBAR DYNAMIQUE */}
-      {isAuthenticated ? <StudentNavbar /> : <Navbar />}
+  const handleFavorite = () => {
+    if (user) {
+        setIsFavorite(!isFavorite);
+    } else {
+        // Redirection vers login pour sauvegarder
+        navigate("/compte", { state: { from: `/formations/${id}` } });
+    }
+  };
 
-      {/* Header Navigation */}
+  const handleSubmitReview = () => {
+    alert("Avis publié !");
+    setShowReviewForm(false);
+    setReviewText("");
+  };
+
+  return (
+    <div className="min-h-screen text-slate-800 font-poppins selection:bg-[#18B49C] selection:text-white">
+      
+      {/* 2. NAVBAR CONDITIONNELLE */}
+      {user ? <StudentNavbar /> : <Navbar />}
+
+      {/* Fil d'ariane / Retour */}
       <div className="pt-28 pb-6 px-6 max-w-7xl mx-auto">
         <Link to="/formations" className="group inline-flex items-center gap-2 text-gray-500 hover:text-[#370669] transition-colors mb-4 text-sm font-medium">
           <div className="p-1 rounded-full bg-white group-hover:bg-[#370669] group-hover:text-white transition-all shadow-sm">
@@ -164,10 +166,10 @@ export default function FormationDetailsPage() {
 
       <div className="max-w-7xl mx-auto px-6 pb-20 grid grid-cols-1 lg:grid-cols-4 gap-8">
         
-        {/* === BLOC GAUCHE (75%) === */}
+        {/* === GAUCHE (Contenu) === */}
         <div className="lg:col-span-3 flex flex-col gap-8">
           
-          {/* --- CARD 1: HERO --- */}
+          {/* --- HERO SECTION --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.04)] border border-gray-100 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-[#18B49C]/10 to-transparent rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none"></div>
             
@@ -184,31 +186,27 @@ export default function FormationDetailsPage() {
                         <span>{formation.insertionRate} d'insertion</span>
                     </div>
 
-                    {isAuthenticated && (
-                        <button 
-                            onClick={() => setIsFavorite(!isFavorite)}
-                            className={`flex items-center gap-2 px-4 py-1.5 rounded-lg transition-all duration-300 border ${
-                                isFavorite 
-                                ? 'bg-red-50 border-red-100 text-red-500' 
-                                : 'bg-white border-gray-200 text-gray-400 hover:text-red-400'
-                            }`}
-                        >
-                            <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
-                            <span className="text-xs font-bold">{isFavorite ? 'Sauvegardé' : 'Sauvegarder'}</span>
-                        </button>
-                    )}
+                    {/* BOUTON FAVORIS (Interactif si étudiant) */}
+                    <button 
+                        onClick={handleFavorite}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-lg transition-all duration-300 border ${
+                            isFavorite 
+                            ? 'bg-red-50 border-red-100 text-red-500 shadow-inner' 
+                            : 'bg-white border-gray-200 text-gray-400 hover:border-red-200 hover:text-red-400'
+                        }`}
+                        title={user ? "Sauvegarder ce cours" : "Connectez-vous pour sauvegarder"}
+                    >
+                        <Heart className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`} />
+                        <span className="text-xs font-bold hidden sm:inline">{isFavorite ? 'Sauvegardé' : 'Sauvegarder'}</span>
+                    </button>
                 </div>
               </div>
 
               <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4 leading-[1.1]">
                 {formation.title}
               </h1>
-              
-              <p className="text-lg md:text-lg mb-8 border-l-4 border-[#18B49C] pl-4 italic font-sans text-gray-600">
-                "{hookPhrase}"
-              </p>
 
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-gray-100 pt-6 mt-2">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-gray-100 pt-6 mt-6">
                 <div className="flex items-center gap-4 group/school cursor-pointer">
                   <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-3xl group-hover/school:scale-105 transition-transform">🏫</div>
                   <div>
@@ -220,27 +218,19 @@ export default function FormationDetailsPage() {
                 </div>
                 
                 <div className="flex items-center gap-2 bg-[#fffbf0] px-4 py-2 rounded-xl border border-[#ffe08a]">
-                    <div className="flex text-[#ffb400]">
-                         <Star className="w-4 h-4 fill-current" />
-                         <Star className="w-4 h-4 fill-current" />
-                         <Star className="w-4 h-4 fill-current" />
-                         <Star className="w-4 h-4 fill-current" />
-                         <Star className="w-4 h-4 fill-current" />
-                    </div>
-                    <span className="font-bold text-slate-900">{formation.reviews.average}</span>
+                    <div className="flex text-[#ffb400]"><Star className="w-4 h-4 fill-current" /><span className="text-slate-900 font-bold ml-1">{formation.reviews.average}</span></div>
                     <span className="text-xs text-gray-400">({formation.reviews.total} avis)</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* --- CARD 2: DETAILS --- */}
+          {/* --- DETAILS --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-1 h-6 bg-[#18B49C] rounded-full"></div>
               <h3 className="text-xl font-bold text-slate-900">Détails du programme</h3>
             </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {[
                 { icon: Clock, label: "Durée", value: formation.duration, color: "text-purple-600", bg: "bg-purple-50" },
@@ -248,13 +238,13 @@ export default function FormationDetailsPage() {
                 { icon: Calendar, label: "Rentrée", value: formation.startDate, color: "text-teal-600", bg: "bg-teal-50" },
                 { icon: Monitor, label: "Format", value: formation.mode, color: "text-orange-600", bg: "bg-orange-50" },
               ].map((item, index) => (
-                <div key={index} className="flex items-center gap-5 p-5 rounded-2xl border border-gray-50 bg-[#fafbfc] hover:bg-white hover:shadow-lg transition-all duration-300">
-                    <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-xl flex items-center justify-center`}><item.icon className="w-6 h-6" /></div>
-                    <div>
-                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">{item.label}</p>
-                        <p className="font-bold text-slate-800 text-sm">{item.value}</p>
-                    </div>
-                </div>
+                  <div key={index} className="flex items-center gap-5 p-5 rounded-2xl border border-gray-50 bg-[#fafbfc] hover:bg-white hover:shadow-lg transition-all duration-300">
+                      <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-xl flex items-center justify-center`}><item.icon className="w-6 h-6" /></div>
+                      <div>
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider mb-1">{item.label}</p>
+                          <p className="font-bold text-slate-800 text-sm">{item.value}</p>
+                      </div>
+                  </div>
               ))}
             </div>
             <div className="mt-8 pt-8 border-t border-gray-100">
@@ -263,7 +253,7 @@ export default function FormationDetailsPage() {
             </div>
           </div>
 
-          {/* --- CARD 3: AVIS --- */}
+          {/* --- SECTION AVIS (Dynamique) --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100">
              <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
@@ -271,7 +261,8 @@ export default function FormationDetailsPage() {
                    <h3 className="text-xl font-bold text-slate-900">Avis étudiants</h3>
                 </div>
                 
-                {isAuthenticated ? (
+                {/* BOUTON REDIGER : Seulement si user connecté */}
+                {user ? (
                     <button 
                         onClick={() => setShowReviewForm(!showReviewForm)}
                         className="text-xs font-bold text-[#370669] bg-[#370669]/5 px-4 py-2 rounded-lg hover:bg-[#370669] hover:text-white transition-all flex items-center gap-2"
@@ -298,7 +289,8 @@ export default function FormationDetailsPage() {
                 </div>
              </div>
 
-             {isAuthenticated && (
+             {/* FORMULAIRE : Visible seulement si user connecté */}
+             {user && (
                  <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showReviewForm ? 'max-h-[500px] opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
                     <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
                         <h4 className="font-bold text-slate-900 mb-4 text-sm">Votre expérience</h4>
@@ -309,9 +301,14 @@ export default function FormationDetailsPage() {
                                 </button>
                             ))}
                         </div>
-                        <textarea className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#370669]/20 text-sm mb-4 min-h-[100px]" placeholder="Qu'avez-vous pensé de cette formation ?"></textarea>
+                        <textarea 
+                            value={reviewText}
+                            onChange={(e) => setReviewText(e.target.value)}
+                            className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#370669]/20 text-sm mb-4 min-h-[100px]" 
+                            placeholder="Qu'avez-vous pensé de cette formation ?"
+                        ></textarea>
                         <div className="flex justify-end">
-                            <button className="bg-[#18B49C] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-[#159c87] flex items-center gap-2">
+                            <button onClick={handleSubmitReview} className="bg-[#18B49C] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-[#159c87] flex items-center gap-2">
                                 <Send className="w-3.5 h-3.5" /> Publier
                             </button>
                         </div>
@@ -324,7 +321,7 @@ export default function FormationDetailsPage() {
              </div>
           </div>
 
-          {/* --- CARD 4: ECOLE --- */}
+          {/* --- INFO ECOLE --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100 overflow-hidden">
              <div className="flex items-center gap-3 mb-6">
                 <div className="w-1 h-6 bg-[#18B49C] rounded-full"></div>
@@ -353,15 +350,16 @@ export default function FormationDetailsPage() {
 
         </div>
 
-        {/* === BLOC DROITE (STICKY ACTION) === */}
+        {/* === DROITE (Sticky) === */}
         <div className="lg:col-span-1">
             <div className="sticky top-28 flex flex-col gap-6">
                 
                 <div className="bg-white rounded-[2rem] p-6 shadow-[0_20px_60px_rgba(55,6,105,0.08)] border border-[#370669]/10 z-20">
                     
-                    {isAuthenticated ? (
+                    {/* Badge Identité */}
+                    {user ? (
                         <div className="flex items-center justify-center gap-2 bg-green-50 text-green-700 text-[10px] font-bold py-2 rounded-lg mb-4 border border-green-100">
-                            <User className="w-3 h-3" /> Connecté en tant que {user?.firstName}
+                            <User className="w-3 h-3" /> Connecté en tant que {user.firstName}
                         </div>
                     ) : (
                         <div className="flex items-center justify-center gap-2 bg-red-50 text-red-500 text-[10px] font-bold py-2 rounded-lg mb-4 border border-red-100 animate-pulse">
@@ -389,13 +387,12 @@ export default function FormationDetailsPage() {
                         </ul>
                     </div>
 
-                    {/* BOUTON D'ACTION PRINCIPAL */}
                     <div className="flex flex-col gap-3">
                         <button 
                             onClick={handleApply}
                             className="w-full bg-[#370669] text-white py-4 rounded-xl font-bold text-sm hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 shadow-xl shadow-[#370669]/20"
                         >
-                            {isAuthenticated ? "Candidater en 1 clic" : "Je postule maintenant"} 
+                            {user ? "Candidater en 1 clic" : "Je postule maintenant"} 
                             <ArrowRight className="w-4 h-4" />
                         </button>
                         
@@ -406,21 +403,20 @@ export default function FormationDetailsPage() {
                         </div>
                     </div>
                     
-                    {!isAuthenticated && (
+                    {!user && (
                         <p className="text-center text-[10px] text-gray-400 mt-4">
                             Aucun paiement requis pour la pré-inscription.
                         </p>
                     )}
                 </div>
 
-                {/* --- CARD AIDE --- */}
                 <div className="bg-gradient-to-br from-[#370669] to-[#250346] rounded-[2rem] p-6 text-white relative overflow-hidden shadow-lg">
                     <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#18B49C] rounded-full blur-[60px] opacity-30"></div>
                     <div className="relative z-10 flex flex-col items-center text-center">
                         <div className="w-10 h-10 rounded-full border-2 border-[#370669] bg-[#18B49C] flex items-center justify-center text-xs font-bold mb-4">?</div>
                         <h3 className="font-bold text-lg mb-1">Une question ?</h3>
                         <p className="text-white/80 text-xs mb-6 leading-relaxed px-2">
-                            {isAuthenticated ? "Discutez avec un ancien élève." : "Nos conseillers sont disponibles."}
+                            {user ? "Discutez avec un ancien élève." : "Nos conseillers sont disponibles."}
                         </p>
                         <button className="w-full bg-white/10 backdrop-blur-md border border-white/20 text-white py-3 rounded-xl font-bold text-sm hover:bg-white hover:text-[#370669] transition-all flex items-center justify-center gap-2">
                             <HelpCircle className="w-4 h-4" /> Discuter

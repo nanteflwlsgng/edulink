@@ -1,263 +1,263 @@
-// src/components/MinimalistMorph.jsx
-import { useLayoutEffect, useRef } from "react";
+// src/components/ProfessionalHome.jsx
+import React, { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ArrowRight, CheckCircle2, Star, ShieldCheck, Users } from "lucide-react";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const MinimalistMorph = () => {
-  const containerRef = useRef(null);
-  
-  // Images (Style "Bright & Clean")
-  const HERO_IMG = "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop"; 
-  const STUDENT_IMG = "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=2070&auto=format&fit=crop"; 
-  const SCHOOL_IMG = "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2069&auto=format&fit=crop"; 
+const ProfessionalHome = () => {
+  const mainRef = useRef(null);
 
-  // Données Témoignages (Avatars + Avis courts)
+  // Images (Style Bureau / Campus lumineux)
+  const HERO_IMG = "https://images.unsplash.com/photo-1523240795612-9a054b0db644?q=80&w=2070&auto=format&fit=crop"; 
+  const STUDENT_IMG = "https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop"; 
+  const SCHOOL_IMG = "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=2000&auto=format&fit=crop"; 
+
+  // Vos données
   const TESTIMONIALS = [
     { name: "Léa", role: "Design", img: "https://i.pravatar.cc/150?img=5", text: "J'ai trouvé mon école en 2 jours." },
     { name: "Thomas", role: "Marketing", img: "https://i.pravatar.cc/150?img=11", text: "Une plateforme intuitive !" },
     { name: "Sarah", role: "Droit", img: "https://i.pravatar.cc/150?img=9", text: "Le matching est parfait." },
     { name: "Mehdi", role: "Ingénieur", img: "https://i.pravatar.cc/150?img=3", text: "Admis à Lyon grâce à vous." },
     { name: "Julie", role: "Santé", img: "https://i.pravatar.cc/150?img=1", text: "Simple, rapide, efficace." },
-    { name: "Alex", role: "Commerce", img: "https://i.pravatar.cc/150?img=8", text: "Je recommande à 100%." },
+  ];
+
+  const STUDENT_FEATURES = [
+    "Recherchez parmi des milliers de formations",
+    "Comparez les programmes en détail",
+    "Postulez directement en ligne",
+    "Suivez vos candidatures en temps réel"
+  ];
+
+  const SCHOOL_FEATURES = [
+    "Créez votre profil école attractif",
+    "Publiez vos formations et programmes",
+    "Gérez les candidatures centralisées",
+    "Analysez vos statistiques de vues"
   ];
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
       
-      // 1. INTRO (Chargement page)
+      // 1. ANIMATION HERO (Douce montée)
       const tl = gsap.timeline();
-      tl.from(".hero-text", { y: 60, opacity: 0, duration: 0.8, stagger: 0.15, ease: "back.out(1.7)" })
-        // On remplace l'anim search-bar par l'anim testimonials
-        .from(".testimonials-container", { y: 40, opacity: 0, duration: 0.6, ease: "power2.out" }, "-=0.4");
+      tl.from(".hero-content", { y: 30, opacity: 0, duration: 0.8, stagger: 0.1, ease: "power2.out" })
+        .from(".hero-image", { x: 30, opacity: 0, duration: 0.8, ease: "power2.out" }, "-=0.6");
 
-      // 1-BIS. ANIMATION MARQUEE INFINI (Témoignages)
-      // On déplace le "track" de 50% (car on a doublé le contenu)
+      // 2. MARQUEE (Défilement fluide)
       gsap.to(".testimonials-track", {
         xPercent: -50,
         repeat: -1,
-        duration: 20, // Vitesse du défilement (plus grand = plus lent)
+        duration: 40, // Plus lent pour être lisible
         ease: "none",
       });
 
-      // 2. HERO MORPHING (L'Effet Demi-Cercle -> Rectangle)
-      gsap.fromTo(".hero-morph-container", 
-        { 
-          clipPath: "ellipse(70% 60% at 50% 0%)", 
-          width: "90%",
-          marginTop: "0px"
-        },
-        {
-          clipPath: "ellipse(150% 100% at 50% 0%)",
-          width: "100%",
-          marginTop: "40px",
-          ease: "power1.inOut",
+      // 3. ANIMATION SECTIONS (Apparition au scroll)
+      const sections = gsap.utils.toArray(".fade-section");
+      sections.forEach((sec) => {
+        gsap.from(sec, {
+          y: 40,
+          opacity: 0,
+          duration: 0.8,
           scrollTrigger: {
-            trigger: ".hero-section-trigger",
-            start: "top top",
-            end: "bottom 40%", 
-            scrub: 1,
+            trigger: sec,
+            start: "top 85%",
+            toggleActions: "play none none reverse"
           }
-        }
-      );
-
-      gsap.fromTo(".hero-inner-img",
-        { scale: 1.2 },
-        { 
-          scale: 1,
-          scrollTrigger: {
-            trigger: ".hero-section-trigger",
-            start: "top top",
-            end: "bottom 40%",
-            scrub: 1
-          }
-        }
-      );
-
-      // 3. PARALLAX DES AUTRES IMAGES
-      const imgContainers = gsap.utils.toArray(".parallax-container");
-      imgContainers.forEach((container) => {
-        const img = container.querySelector("img");
-        
-        gsap.fromTo(img, 
-          { yPercent: -30, scale: 1.25 },
-          {
-            yPercent: 30,
-            scale: 1.25,
-            ease: "none",
-            scrollTrigger: {
-              trigger: container,
-              start: "top bottom", 
-              end: "bottom top",
-              scrub: 0, 
-            }
-          }
-        );
+        });
       });
 
-      // 4. TEXTES REVEAL
-      const textSections = gsap.utils.toArray(".text-reveal");
-      textSections.forEach((section) => {
-        gsap.fromTo(section,
-          { y: 80, opacity: 0 },
-          {
-            y: 0, 
-            opacity: 1, 
-            duration: 0.8, 
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: section,
-              start: "top 85%", 
-              end: "bottom 15%", 
-              toggleActions: "play reverse play reverse"
-            }
-          }
-        );
-      });
-
-    }, containerRef);
+    }, mainRef);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <div ref={containerRef} className="bg-white text-slate-800 font-sans overflow-x-hidden selection:bg-[#18B49C] selection:text-white">
+    <div ref={mainRef} className="bg-white text-slate-800 font-poppins overflow-x-hidden selection:bg-[#18B49C] selection:text-white">
       
-      {/* --- HERO SECTION --- */}
-      <div className="hero-section-trigger relative min-h-screen flex flex-col items-center pt-20 pb-10 max-w-full mx-auto">
-        
-        {/* TITRE & SOUS-TITRE */}
-        <div className="text-center mb-10 z-20 px-6 max-w-4xl">
-          <h1 className="hero-text text-5xl md:text-7xl font-avenueX leading-[1.1] tracking-tight text-gray-900 mb-6">
-            Trouvez l'école parfaite,<br />
-            <span className="text-transparent font-avenueX bg-clip-text bg-gradient-to-r from-[#18B49C] to-[#27b6d8]">
-              construisez votre avenir
+      {/* --- HERO SECTION (Classique & Efficace) --- */}
+      <div className="max-w-7xl mx-auto px-6 pt-32 pb-20 lg:pt-40 lg:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Texte Gauche */}
+          <div className="max-w-2xl">
+            <span className="hero-content inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-[#27b6d8] text-xs font-bold uppercase tracking-wider mb-6">
+               <span className="w-2 h-2 rounded-full bg-[#27b6d8]"></span> Plateforme N°1 en Orientation
             </span>
-          </h1>
-          <p className="hero-text text-lg md:text-xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
-            Rejoignez une communauté de plus de 50 000 étudiants satisfaits.
-          </p>
+            <h1 className="hero-content text-4xl lg:text-6xl font-bold text-slate-900 leading-[1.15] mb-6">
+              Trouvez l'école qui <br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#18B49C] to-[#27b6d8]">
+                changera votre avenir.
+              </span>
+            </h1>
+            <p className="hero-content text-lg text-gray-500 mb-8 leading-relaxed">
+              Rejoignez une communauté de 50 000+ étudiants. Comparez, choisissez et postulez aux meilleures formations en toute simplicité.
+            </p>
+            <div className="hero-content flex flex-wrap gap-4">
+               <button className="px-8 py-3.5 bg-[#370669] text-white rounded-lg font-semibold hover:bg-[#2a0452] transition-colors shadow-lg shadow-[#370669]/20 flex items-center gap-2">
+                 Explorer les formations <ArrowRight className="w-4 h-4" />
+               </button>
+               <button className="px-8 py-3.5 bg-white border border-gray-200 text-slate-700 rounded-lg font-semibold hover:border-gray-400 transition-colors">
+                 Comment ça marche ?
+               </button>
+            </div>
+            
+            {/* Trust Badges */}
+            <div className="hero-content mt-10 flex items-center gap-6 text-sm font-medium text-gray-500">
+                <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-[#18B49C]"/> Dossiers vérifiés</div>
+                <div className="flex items-center gap-2"><Users className="w-4 h-4 text-[#18B49C]"/> +500 Écoles</div>
+            </div>
+          </div>
+
+          {/* Image Droite (Propre avec bords arrondis) */}
+          <div className="hero-image relative lg:h-[500px]">
+             <img src={HERO_IMG} alt="Students working" className="w-full h-full object-cover rounded-2xl shadow-2xl shadow-gray-200" />
+             
+             {/* Floating Card */}
+             <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-gray-50 hidden md:block animate-bounce-slow">
+                <div className="flex items-center gap-3 mb-2">
+                   <div className="flex -space-x-2">
+                      <img src="https://i.pravatar.cc/100?img=12" className="w-8 h-8 rounded-full border-2 border-white" />
+                      <img src="https://i.pravatar.cc/100?img=32" className="w-8 h-8 rounded-full border-2 border-white" />
+                      <img src="https://i.pravatar.cc/100?img=15" className="w-8 h-8 rounded-full border-2 border-white" />
+                   </div>
+                   <span className="text-sm font-bold text-slate-900">+2k Inscrits aujourd'hui</span>
+                </div>
+                <div className="flex gap-1">
+                   {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />)}
+                </div>
+             </div>
+          </div>
+
         </div>
+      </div>
 
-        {/* --- TÉMOIGNAGES INFINITE SCROLL --- */}
-        <div className="testimonials-container w-full max-w-full overflow-hidden relative z-30 mb-8 py-4">
-             {/* Masques de flou sur les côtés pour l'effet fondu */}
-             <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white to-transparent z-40"></div>
-             <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white to-transparent z-40"></div>
+      {/* --- BANDEAU AVIS (Fond Gris clair pour séparer) --- */}
+      <div className="bg-slate-50 py-16 border-y border-gray-100 overflow-hidden">
+         <div className="max-w-7xl mx-auto px-6 mb-8 text-center">
+            <h2 className="text-2xl font-bold text-slate-900">Ils nous font confiance</h2>
+         </div>
+         
+         {/* Carrousel Déroulant */}
+         <div className="w-full overflow-hidden relative">
+             <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-slate-50 to-transparent z-10"></div>
+             <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-slate-50 to-transparent z-10"></div>
 
-             {/* Le Track qui contient les éléments doublés */}
              <div className="testimonials-track flex gap-6 w-max pl-6">
-                {/* On double la liste pour créer la boucle infinie */}
                 {[...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS].map((item, index) => (
-                    <div key={index} className="flex items-center gap-4 bg-white border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] px-5 py-3 rounded-full min-w-[280px] hover:scale-105 transition-transform cursor-default">
-                        <img src={item.img} alt={item.name} className="w-10 h-10 rounded-full border-2 border-gray-50 object-cover flex-shrink-0" />
-                        <div className="flex flex-col">
-                            <p className="text-xs font-bold text-gray-800">{item.name} <span className="text-[#18B49C] font-normal">• {item.role}</span></p>
-                            <p className="text-xs text-gray-500 italic truncate max-w-[160px]">"{item.text}"</p>
+                    <div key={index} className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm min-w-[300px] flex flex-col gap-3">
+                        <p className="text-sm text-gray-600 italic">"{item.text}"</p>
+                        <div className="flex items-center gap-3 pt-2 border-t border-gray-50">
+                            <img src={item.img} alt={item.name} className="w-8 h-8 rounded-full" />
+                            <div>
+                                <p className="text-xs font-bold text-slate-900">{item.name}</p>
+                                <p className="text-[10px] text-gray-400 uppercase">{item.role}</p>
+                            </div>
                         </div>
                     </div>
                 ))}
              </div>
-        </div>
-
-        {/* --- IMAGE HERO MORPHING --- */}
-        <div className="hero-morph-container h-[500px] md:h-[650px] overflow-hidden relative z-10 mx-auto">
-            <img src={HERO_IMG} alt="Students" className="hero-inner-img w-full h-full object-cover" />
-             <div className="absolute inset-0 bg-black/10"></div>
-        </div>
-
-        <div className="flex justify-center mt-12 hero-text relative z-20">
-            <button className="px-8 py-3 font-bold text-sm tracking-widest uppercase bg-white border border-gray-200 text-gray-600 hover:text-[#370669] hover:border-[#370669] rounded-full transition-colors">
-              Découvrir formation
-            </button>
-        </div>
+         </div>
       </div>
 
-
-      {/* --- SECTION 2 : ÉTUDIANTS --- */}
-      <div className="py-24 px-6 max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
+      {/* --- SECTION ÉTUDIANTS --- */}
+      <div className="max-w-7xl mx-auto px-6 py-24">
+         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center fade-section">
             
-            {/* Image Parallax Gauche */}
-            <div className="parallax-container h-[500px] w-full rounded-[2rem] overflow-hidden relative shadow-2xl shadow-gray-100">
-                <img src={STUDENT_IMG} alt="Étudiant" className="absolute w-full h-full object-cover" />
+            {/* Image Gauche */}
+            <div className="relative order-2 lg:order-1">
+                <div className="absolute inset-0 bg-[#18B49C] rounded-2xl transform rotate-3 opacity-20 translate-y-4 translate-x-4"></div>
+                <img src={STUDENT_IMG} alt="Student" className="relative z-10 w-full h-[500px] object-cover rounded-2xl shadow-lg" />
             </div>
 
             {/* Texte Droite */}
-            <div className="text-reveal pl-0 md:pl-8">
-                <span className="text-[#18B49C] font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-                <span className="w-8 h-[2px] bg-[#18B49C]"></span>
-                    Étudiants
-                </span>
-                <h2 className="text-5xl md:text-6xl font-orange mb-6 text-slate-900 leading-tight">
-                    Pour les etudiants
+            <div className="order-1 lg:order-2">
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center text-[#18B49C] mb-6">
+                   <Users className="w-6 h-6" />
+                </div>
+                <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
+                   L'espace Étudiant. <br/> Simplifiez votre orientation.
                 </h2>
-                <p className="text-gray-500 mb-8 leading-relaxed text-lg">
-                    Explorez les meilleures formations et postulez en quelques clics. 
-                    Nous simplifions votre parcours vers l'excellence.
+                <p className="text-gray-500 mb-8 leading-relaxed">
+                   Plus besoin de multiplier les dossiers. Créez votre profil unique et postulez à des centaines de formations vérifiées en quelques clics.
                 </p>
+
                 <ul className="space-y-4">
-                  {[
-                      "Recherchez parmi des milliers de formations",
-                      "Comparez les programmes en détail",
-                      "Postulez directement en ligne",
-                      "Suivez vos candidatures en temps réel"
-                  ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-4 text-gray-700 font-medium">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-50 text-[#18b49c] flex items-center justify-center text-sm">✓</span>
-                          {item}
-                      </li>
-                  ))}
+                   {STUDENT_FEATURES.map((feat, i) => (
+                       <li key={i} className="flex items-start gap-3">
+                           <CheckCircle2 className="w-5 h-5 text-[#18B49C] flex-shrink-0 mt-0.5" />
+                           <span className="text-slate-700 font-medium">{feat}</span>
+                       </li>
+                   ))}
                 </ul>
-                <button className="mt-10 group flex items-center gap-2 text-[#18b49c] font-bold hover:gap-4 transition-all">
-                    Commencer l'inscription <span className="text-xl">→</span>
+
+                <button className="mt-8 text-[#18B49C] font-bold hover:text-[#14806e] flex items-center gap-2 group">
+                    Créer mon profil étudiant <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
             </div>
-          </div>
+
+         </div>
       </div>
 
+      {/* --- SECTION ÉCOLES --- */}
+      <div className="bg-[#fcfbfc] py-24 border-t border-gray-100">
+         <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center fade-section">
+                
+                {/* Texte Gauche */}
+                <div>
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center text-[#370669] mb-6">
+                       <ShieldCheck className="w-6 h-6" />
+                    </div>
+                    <h2 className="text-3xl lg:text-4xl font-bold text-slate-900 mb-6">
+                       Pour les Écoles. <br/> Attirez les meilleurs talents.
+                    </h2>
+                    <p className="text-gray-500 mb-8 leading-relaxed">
+                       Une suite d'outils complète pour gérer vos admissions, promouvoir vos programmes et analyser votre attractivité auprès des étudiants.
+                    </p>
 
-      {/* --- SECTION 3 : ÉCOLES --- */}
-      <div className="py-24 px-6 max-w-7xl mx-auto rounded-[3rem] mb-24">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 md:gap-24 items-center">
-            
-            {/* Texte Gauche */}
-            <div className="text-reveal pr-0 md:pr-8 order-2 md:order-1">
-            <span className="text-[#18B49C] font-bold uppercase tracking-widest text-xs mb-4 flex items-center gap-2">
-            <span className="w-8 h-[2px] bg-[#18B49C]"></span>
-                    Institutions
-                </span>
-                <h2 className="text-5xl md:text-6xl font-orange mb-6 text-slate-9000 leading-tight">
-                    Pour les ecoles
-                </h2>
-                <p className="text-gray-500 mb-8 leading-relaxed text-lg">
-                    Présentez vos formations, gérez vos inscriptions, et suivez vos étudiants
-                    avec nos outils dédiés aux professionnels de l'éducation.
-                </p>
-                <ul className="space-y-4">
-                  {[
-                      "Créez votre profil école attractif",
-                      "Publiez vos formations et programmes",
-                      "Gérez les candidatures centralisées",
-                      "Analysez vos statistiques de vues"
-                  ].map((item, i) => (
-                      <li key={i} className="flex items-start gap-4 text-gray-700 font-medium">
-                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-50 text-[#27b6d8] flex items-center justify-center text-sm">✓</span>
-                          {item}
-                      </li>
-                  ))}
-                </ul>
-                 <button className="mt-10 group flex items-center gap-2 text-[#27b6d8] font-bold hover:gap-4 transition-all">
-                    Devenir partenaire <span className="text-xl">→</span>
-                </button>
+                    <ul className="space-y-4">
+                       {SCHOOL_FEATURES.map((feat, i) => (
+                           <li key={i} className="flex items-start gap-3">
+                               <span className="w-5 h-5 rounded-full bg-[#370669] text-white flex items-center justify-center text-[10px] font-bold mt-0.5">
+                                   {i + 1}
+                               </span>
+                               <span className="text-slate-700 font-medium">{feat}</span>
+                           </li>
+                       ))}
+                    </ul>
+
+                    <button className="mt-8 px-6 py-3 bg-white border border-gray-300 text-slate-700 rounded-lg font-bold hover:border-[#370669] hover:text-[#370669] transition-colors">
+                        Espace Établissement
+                    </button>
+                </div>
+
+                {/* Image Droite */}
+                <div className="relative">
+                    <div className="absolute inset-0 bg-[#370669] rounded-2xl transform -rotate-3 opacity-10 translate-y-4 -translate-x-4"></div>
+                    <img src={SCHOOL_IMG} alt="School" className="relative z-10 w-full h-[500px] object-cover rounded-2xl shadow-lg" />
+                </div>
+
             </div>
+         </div>
+      </div>
 
-            {/* Image Parallax Droite */}
-            <div className="parallax-container h-[500px] w-full rounded-[2rem] overflow-hidden relative shadow-2xl shadow-blue-100 order-1 md:order-2">
-                <img src={SCHOOL_IMG} alt="École" className="absolute w-full h-full object-cover" />
-            </div>
-
+      {/* --- CTA FINAL --- */}
+      <div className="py-20 text-center px-6">
+          <div className="max-w-3xl mx-auto bg-[#370669] rounded-3xl p-10 md:p-16 text-white shadow-2xl shadow-[#370669]/30 fade-section">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">Prêt à commencer ?</h2>
+              <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
+                  Rejoignez la plateforme dès aujourd'hui et accédez à toutes les fonctionnalités gratuitement.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-4">
+                  <button className="px-8 py-3 bg-white text-[#370669] rounded-lg font-bold hover:bg-gray-100 transition-colors">
+                      Inscription Étudiant
+                  </button>
+                  <button className="px-8 py-3 bg-transparent border border-white/30 text-white rounded-lg font-bold hover:bg-white/10 transition-colors">
+                      Partenaire École
+                  </button>
+              </div>
           </div>
       </div>
 
@@ -265,4 +265,4 @@ const MinimalistMorph = () => {
   );
 };
 
-export default MinimalistMorph;
+export default ProfessionalHome;
