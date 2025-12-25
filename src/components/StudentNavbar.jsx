@@ -11,7 +11,7 @@ export default function StudentNavbar() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 w-full bg-white/90 backdrop-blur-md z-[90] font-poppins transition-all duration-300">
+    <nav className="fixed top-0 left-0 w-full bg-white backdrop-blur-md z-[90] font-poppins transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
         {/* Logo */}

@@ -4,7 +4,7 @@ import {
   MapPin, Clock, Calendar, Globe, Monitor, 
   School, Mail, Phone, CheckCircle, HelpCircle, 
   ArrowLeft, Share2, Heart, Star, TrendingUp, AlertCircle,
-  ArrowRight, MessageSquare, Send, User, Lock
+  ArrowRight, MessageSquare, Send, User, Lock,Hourglass, ReceiptText
 } from "lucide-react";
 
 // --- IMPORTS ---
@@ -95,6 +95,8 @@ export default function FormationDetailsPage() {
     language: "Français & Anglais",
     startDate: "15 Septembre 2025",
     mode: "Hybride",
+    type: "Sélection de dossier",
+    end_date: "28 janvier 2026",
     insertionRate: "94%", 
     description: "Cette formation offre une approche complète et immersive, conçue pour former les leaders de demain. Le cursus allie théorie académique rigoureuse et pratique professionnelle intense à travers des stages garantis.",
     schoolDescription: "Fondée en 1985, notre établissement est un pilier de l'excellence académique.",
@@ -126,12 +128,16 @@ export default function FormationDetailsPage() {
   // --- LOGIQUES D'INTERACTION ---
 
   const handleApply = () => {
+    // Si l'utilisateur est connecté, on l'envoie vers la page de candidature
+    // Si l'utilisateur n'est PAS connecté, on l'envoie se connecter, 
+    // puis on le redirigera vers la candidature grâce au 'state'
     if (user) {
-        alert(`Candidature envoyée pour ${user.firstName} !`);
+        navigate(`/candidature/${id}`);
     } else {
-        navigate("/compte", { state: { from: `/formations/${id}` } });
+        // Le state 'from' permettra de rediriger l'utilisateur après le login
+        navigate("/compte", { state: { from: `/candidature/${id}` } });
     }
-  };
+};
 
   const handleFavorite = () => {
     if (user) {
@@ -237,6 +243,8 @@ export default function FormationDetailsPage() {
                 { icon: Globe, label: "Langues", value: formation.language, color: "text-blue-600", bg: "bg-blue-50" },
                 { icon: Calendar, label: "Rentrée", value: formation.startDate, color: "text-teal-600", bg: "bg-teal-50" },
                 { icon: Monitor, label: "Format", value: formation.mode, color: "text-orange-600", bg: "bg-orange-50" },
+                { icon: ReceiptText, label: "Admission", value: formation.type, color: "text-green-600", bg: "bg-green-50" },
+                { icon: Hourglass, label: "date limite de depot de dossier", value: formation.end_date, color: "text-red-600", bg: "bg-red-50" },
               ].map((item, index) => (
                   <div key={index} className="flex items-center gap-5 p-5 rounded-2xl border border-gray-50 bg-[#fafbfc] hover:bg-white hover:shadow-lg transition-all duration-300">
                       <div className={`w-12 h-12 ${item.bg} ${item.color} rounded-xl flex items-center justify-center`}><item.icon className="w-6 h-6" /></div>

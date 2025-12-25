@@ -24,7 +24,7 @@ export default function AccountPage() {
   }, []);
 
   const handleClose = () => {
-    gsap.to(containerRef.current, { opacity: 0, duration: 0.4, onComplete: () => navigate("/") });
+    gsap.to(containerRef.current, { opacity: 0, duration: 0.4, onComplete: () => navigate(-1) });
   };
 
   return (

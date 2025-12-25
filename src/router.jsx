@@ -8,6 +8,7 @@ import Formations from "./pages/formations";
 import Establishments from "./pages/Establishments";
 import Dashboard from "./pages/studentDashboard"; // 2. On importe le nouveau Dashboard
 import FormationDetailsPage from "./pages/formationDetailsPage";
+import CandidaturePage from "./pages/candidaturePage";
 
 // 3. On crée un Layout Racine qui englobe toute l'app
 // C'est lui qui distribue la "session" à toutes les pages via <Outlet />
@@ -48,6 +49,10 @@ const router = createBrowserRouter([
       {
         path: "/dashboard", // 4. La route protégée (accessible via logique dans le composant)
         element: <Dashboard/>,
+      },
+      {
+        path: "/candidature/:id", // 4. La route protégée (accessible via logique dans le composant)
+        element: <CandidaturePage/>,
       },
     ],
   },
