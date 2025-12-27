@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import gsap from "gsap";
-import { ArrowLeft, X, Check, ChevronRight } from "lucide-react";
+import { 
+  ArrowLeft, X, Check, ChevronRight, Mail, Lock, User, 
+  MapPin, Eye, EyeOff, Building2, Phone 
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function AccountPage() {
@@ -28,11 +31,11 @@ export default function AccountPage() {
   };
 
   return (
-    <div ref={containerRef} className="fixed inset-0 w-full h-full bg-[#fdfdfd] z-[100] overflow-hidden font-poppins">
+    <div ref={containerRef} className="fixed inset-0 w-full h-full bg-[#fdfdfd] z-[100] overflow-hidden font-poppins text-slate-800">
       <div className="parallax-bg absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-slate-100 rounded-full blur-[120px] opacity-60" />
       <div className="parallax-bg absolute bottom-[-10%] right-[-5%] w-[30%] h-[30%] bg-slate-100 rounded-full blur-[100px] opacity-60" />
 
-      <button onClick={handleClose} className="fixed top-8 right-8 z-[120] p-3 hover:rotate-90 transition-transform duration-300">
+      <button onClick={handleClose} className="fixed top-8 right-8 z-[120] p-3 hover:rotate-90 transition-transform duration-300 bg-white rounded-full shadow-sm hover:shadow-md">
         <X className="w-6 h-6 text-slate-400" />
       </button>
 
@@ -74,45 +77,49 @@ function RoleCard({ title, img, label, color, onClick }) {
       <div className="role-img relative z-10 w-48 h-48 md:w-80 md:h-80 mb-6 transition-transform duration-500 group-hover:scale-105">
         <img src={img} alt={title} className="w-full h-full object-contain drop-shadow-2xl" />
       </div>
-      <h2 className="relative z-10 text-4xl font-orange text-slate-900 group-hover:text-[var(--hover-color)] transition-colors" style={{"--hover-color": color}}>{title}</h2>
+      <h2 className="relative z-10 text-4xl font-bold text-slate-900 group-hover:text-[var(--hover-color)] transition-colors" style={{"--hover-color": color}}>{title}</h2>
     </div>
   );
 }
 
-// === LE COMPOSANT DU FORMULAIRE COMPLET ===
+// === NOUVELLE VERSION DU FORMULAIRE (PROFESSIONNEL) ===
 function AuthForm({ type, onBack, theme }) {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const formRef = useRef(null);
 
-  const [isLogin, setIsLogin] = useState(false); // Toggle Login/Register
+  const [isLogin, setIsLogin] = useState(true); // Par défaut Login
   const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   
-  // Données du formulaire
+  // Données du formulaire enrichies
   const [formData, setFormData] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    phone: "",
     password: "",
+    confirmPassword: "",
     city: ""
   });
 
   useEffect(() => {
-    gsap.fromTo(formRef.current, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" });
+    gsap.fromTo(formRef.current, { opacity: 0, scale: 0.95 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" });
   }, []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(""); // Reset erreur à la saisie
+    setError(""); 
   };
 
-  const handleNextOrSubmit = () => {
+  const handleNextOrSubmit = (e) => {
+    e.preventDefault();
     setError("");
 
     // --- LOGIQUE LOGIN ---
     if (isLogin) {
       if (!formData.email || !formData.password) {
-        setError("Veuillez remplir tous les champs.");
+        setError("Identifiants requis.");
         shakeForm();
         return;
       }
@@ -127,19 +134,16 @@ function AuthForm({ type, onBack, theme }) {
     }
 
     // --- LOGIQUE REGISTER ---
-    // Validation Etape 1
     if (step === 1) {
-      if (!formData.name || !formData.email) {
-        setError("Veuillez remplir le nom et l'email.");
+      if (!formData.firstName || !formData.lastName || !formData.email) {
+        setError("Veuillez remplir les informations de base.");
         shakeForm();
         return;
       }
       nextStepAnim();
-    } 
-    // Validation Etape 2 et Submit
-    else {
-      if (!formData.password || !formData.city) {
-        setError("Veuillez remplir le mot de passe et la ville.");
+    } else {
+      if (!formData.password || formData.password !== formData.confirmPassword) {
+        setError("Les mots de passe ne correspondent pas ou sont vides.");
         shakeForm();
         return;
       }
@@ -154,7 +158,7 @@ function AuthForm({ type, onBack, theme }) {
   };
 
   // Animations GSAP
-  const shakeForm = () => gsap.to(".step-anim", { x: [-10, 10, -10, 10, 0], duration: 0.4 });
+  const shakeForm = () => gsap.to(".form-container", { x: [-5, 5, -5, 5, 0], duration: 0.4 });
   
   const nextStepAnim = () => {
     gsap.to(".step-anim", { opacity: 0, x: -20, duration: 0.3, onComplete: () => {
@@ -164,92 +168,159 @@ function AuthForm({ type, onBack, theme }) {
   };
 
   const toggleMode = () => {
-    gsap.to(".step-anim", { opacity: 0, y: 10, duration: 0.2, onComplete: () => {
+    gsap.to(".form-container", { opacity: 0, y: 10, duration: 0.2, onComplete: () => {
         setIsLogin(!isLogin);
         setStep(1);
         setError("");
-        gsap.fromTo(".step-anim", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.3 });
+        gsap.fromTo(".form-container", { opacity: 1, y: 0 }, { opacity: 1, y: 0, duration: 0.3 });
     }});
   };
 
   return (
-    <div ref={formRef} className="absolute inset-0 flex items-center justify-center bg-white z-50">
-      <div className="w-full max-w-lg px-8">
+    <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-50 p-4">
+      <div ref={formRef} className="form-container w-full max-w-md bg-white rounded-[2rem] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 overflow-hidden relative">
         
-        {/* Nav Header */}
-        <div className="flex justify-between items-center mb-10">
-            <button onClick={onBack} className="flex items-center gap-2 text-xs font-bold tracking-widest text-gray-400 hover:text-black transition-colors uppercase">
-            <ArrowLeft className="w-4 h-4" /> Retour
-            </button>
-            <button onClick={toggleMode} className="text-xs font-bold tracking-widest text-[#370669] border-b border-[#370669] pb-0.5 hover:opacity-70 transition-opacity uppercase">
-                {isLogin ? "Créer un compte" : "J'ai déjà un compte"}
-            </button>
-        </div>
+        {/* Bandeau supérieur coloré */}
+        <div className="h-2 w-full absolute top-0 left-0" style={{ backgroundColor: theme }}></div>
+        
+        <div className="p-8 md:p-10">
+            {/* Header Form */}
+            <div className="flex justify-between items-start mb-8">
+                <div>
+                    <button onClick={onBack} className="flex items-center gap-1 text-gray-400 hover:text-slate-800 transition-colors text-xs font-bold mb-4">
+                        <ArrowLeft className="w-3 h-3" /> Retour
+                    </button>
+                    <h2 className="text-2xl font-bold text-slate-900">
+                        {isLogin ? "Bon retour !" : "Créer un compte"}
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        {isLogin ? "Accédez à votre espace " + (type === 'student' ? "étudiant" : "établissement") : "Rejoignez la plateforme"}
+                    </p>
+                </div>
+                {/* Icône de type */}
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-gray-50 text-slate-900 shadow-sm">
+                    {type === 'student' ? <User className="w-6 h-6" /> : <Building2 className="w-6 h-6" />}
+                </div>
+            </div>
 
-        <div className="step-anim">
-          <p className="text-[10px] font-bold tracking-[0.3em] uppercase mb-2" style={{ color: theme }}>
-            {isLogin ? "CONNEXION" : `ÉTAPE 0${step}`}
-          </p>
-          <h2 className="text-4xl font-orange text-slate-900 mb-2">
-            {isLogin ? "Heureux de vous revoir." : (step === 1 ? "Vos identifiants." : "Derniers détails.")}
-          </h2>
-          
-          {/* Zone Erreur */}
-          <div className="h-6 mb-6 text-red-500 text-xs font-bold uppercase tracking-wider">{error}</div>
-
-          <div className="space-y-8">
-            {isLogin ? (
-                <>
-                    <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
-                    <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
-                </>
-            ) : (
-                step === 1 ? (
-                    <>
-                        <SimpleInput name="name" label="Nom complet" theme={theme} value={formData.name} onChange={handleChange} />
-                        <SimpleInput name="email" label="Adresse Email" type="email" theme={theme} value={formData.email} onChange={handleChange} />
-                    </>
-                ) : (
-                    <>
-                        <SimpleInput name="password" label="Mot de passe" type="password" theme={theme} value={formData.password} onChange={handleChange} />
-                        <SimpleInput name="city" label="Ville" theme={theme} value={formData.city} onChange={handleChange} />
-                    </>
-                )
+            {/* Zone d'erreur */}
+            {error && (
+                <div className="bg-red-50 text-red-600 text-xs font-bold p-3 rounded-xl mb-6 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div> {error}
+                </div>
             )}
-          </div>
 
-          <div className="mt-12 flex justify-end">
-            <button 
-              onClick={handleNextOrSubmit}
-              className="px-10 py-4 rounded-full bg-slate-900 text-white flex items-center gap-3 hover:scale-105 active:scale-95 transition-all shadow-xl hover:shadow-2xl"
-            >
-              <span className="text-xs font-bold uppercase tracking-widest">
-                {isLogin ? "Se connecter" : (step === 2 ? "Valider" : "Suivant")}
-              </span>
-              {(isLogin || step === 2) ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-            </button>
-          </div>
+            <form className="step-anim" onSubmit={handleNextOrSubmit}>
+                {isLogin ? (
+                    // --- LOGIN FORM ---
+                    <div className="space-y-4">
+                        <InputField 
+                            label="Email académique" 
+                            name="email" 
+                            type="email" 
+                            icon={Mail} 
+                            value={formData.email} 
+                            onChange={handleChange} 
+                            activeColor={theme}
+                        />
+                        <div>
+                            <InputField 
+                                label="Mot de passe" 
+                                name="password" 
+                                type="password" 
+                                icon={Lock} 
+                                value={formData.password} 
+                                onChange={handleChange} 
+                                activeColor={theme}
+                            />
+                            <div className="flex justify-end mt-2">
+                                <a href="#" className="text-[11px] font-bold text-gray-400 hover:text-[#370669]">Mot de passe oublié ?</a>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    // --- REGISTER FORM ---
+                    step === 1 ? (
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                                <InputField label="Prénom" name="firstName" icon={User} value={formData.firstName} onChange={handleChange} activeColor={theme} />
+                                <InputField label="Nom" name="lastName" icon={User} value={formData.lastName} onChange={handleChange} activeColor={theme} />
+                            </div>
+                            <InputField label="Email" name="email" type="email" icon={Mail} value={formData.email} onChange={handleChange} activeColor={theme} />
+                            <InputField label="Téléphone" name="phone" type="tel" icon={Phone} value={formData.phone} onChange={handleChange} activeColor={theme} />
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            <InputField label="Ville / Campus" name="city" icon={MapPin} value={formData.city} onChange={handleChange} activeColor={theme} />
+                            <InputField label="Mot de passe" name="password" type="password" icon={Lock} value={formData.password} onChange={handleChange} activeColor={theme} />
+                            <InputField label="Confirmer" name="confirmPassword" type="password" icon={Lock} value={formData.confirmPassword} onChange={handleChange} activeColor={theme} />
+                        </div>
+                    )
+                )}
+
+                {/* Bouton d'action */}
+                <button 
+                    type="submit"
+                    className="w-full mt-8 py-4 rounded-xl text-white font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98]"
+                    style={{ backgroundColor: theme || '#370669' }}
+                >
+                    {isLogin ? "Se connecter" : (step === 1 ? "Suivant" : "Confirmer l'inscription")}
+                    {(!isLogin && step === 1) ? <ChevronRight className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                </button>
+            </form>
+
+            {/* Toggle Login/Register Footer */}
+            <div className="mt-8 text-center pt-6 border-t border-gray-100">
+                <p className="text-xs text-gray-500">
+                    {isLogin ? "Pas encore de compte ?" : "Vous avez déjà un compte ?"} 
+                    <button 
+                        onClick={toggleMode} 
+                        className="ml-2 font-bold hover:underline transition-all"
+                        style={{ color: theme || '#370669' }}
+                    >
+                        {isLogin ? "S'inscrire" : "Se connecter"}
+                    </button>
+                </p>
+            </div>
         </div>
       </div>
     </div>
   );
 }
 
-function SimpleInput({ label, type = "text", theme, name, value, onChange }) {
-  return (
-    <div className="relative w-full">
-      <input 
-        name={name}
-        type={type} 
-        value={value}
-        onChange={onChange}
-        placeholder=" "
-        className="peer w-full bg-transparent border-b border-gray-200 py-3 text-lg outline-none focus:border-slate-900 transition-all text-slate-900"
-      />
-      <label className="absolute left-0 top-3 text-gray-400 pointer-events-none transition-all peer-focus:-top-5 peer-focus:text-[10px] peer-focus:font-bold peer-focus:uppercase peer-[:not(:placeholder-shown)]:-top-5 peer-[:not(:placeholder-shown)]:text-[10px]">
-        {label}
-      </label>
-      <div className="absolute bottom-0 left-0 h-[2px] w-0 bg-slate-900 transition-all duration-500 peer-focus:w-full" style={{ backgroundColor: theme }} />
-    </div>
-  );
-}
+// === INPUT COMPONENT PROFESSIONNEL ===
+const InputField = ({ label, type = "text", name, value, onChange, icon: Icon, activeColor }) => {
+    const [showPass, setShowPass] = useState(false);
+    const isPassword = type === "password";
+    const inputType = isPassword ? (showPass ? "text" : "password") : type;
+
+    return (
+        <div>
+            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{label}</label>
+            <div className="relative group">
+                <input
+                    name={name}
+                    type={inputType}
+                    value={value}
+                    onChange={onChange}
+                    placeholder={`Entrez votre ${label.toLowerCase()}`}
+                    className="w-full pl-10 pr-10 py-3.5 rounded-xl  border border-gray-200 focus:border-[#370669] focus:ring-2 focus:ring-[#370669]/20 outline-none transition-all text-sm bg-white text-slate-800 placeholder:text-gray-400"
+                    style={{ "--active-color": activeColor }}
+                />
+                {Icon && (
+                    <Icon className="absolute left-3.5 top-3.5 w-4 h-4 text-gray-400 group-focus-within:text-[var(--active-color)] transition-colors" style={{ "--active-color": activeColor }} />
+                )}
+                
+                {isPassword && (
+                    <button 
+                        type="button"
+                        onClick={() => setShowPass(!showPass)}
+                        className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                        {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+};
