@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext"; // Le contexte d'auth
 import Navbar from "../components/Navbar"; 
 import StudentNavbar from "../components/StudentNavbar"; // Navbar Étudiant
 import { MOCK_DATA } from "../dataformation";
+import Footer from "../components/Footer";
 
 // --- SOUS-COMPOSANTS UI (Pour la propreté) ---
 
@@ -436,6 +437,7 @@ export default function FormationDetailsPage() {
         </div>
 
       </div>
+      <Footer/>
     </div>
   );
 }
