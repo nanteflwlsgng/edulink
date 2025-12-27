@@ -22,7 +22,7 @@ const applicationsData = [
   { id: 5, school: "INSCAE", program: "Master Contrôle de Gestion", status: "accepted", date: "Hier", price: "8 200 000 Ar", enrollmentComplete: false },
 
   // CAS 5 : Refusé
-  { id: 4, school: "Epitech", program: "Coding Academy", status: "rejected", date: "Il y a 3 jours" },
+  { id: 4, school: "Epitech", program: "Coding Academy", status: "rejected", date: "Il y a 3 jours"},
 ];
 
 const favoritesData = [
@@ -303,7 +303,7 @@ function ApplicationModal({ application, onClose }) {
                 <div className="p-8">
                     {application.status === 'accepted' && <AcceptedContent app={application} onClose={onClose} />}
                     {['sent', 'viewed'].includes(application.status) && <PendingContent app={application} />}
-                    {application.status === 'rejected' && <RejectedContent app={application} />}
+                    {application.status === 'rejected' && <RejectedContent app={application} onClose={onClose} />}
                 </div>
             </div>
         </div>
@@ -389,13 +389,15 @@ function PendingContent({ app }) {
     );
 }
 
-function RejectedContent({ app }) {
+function RejectedContent({ app, onClose }) {
+        const navigate = useNavigate();
+        const handleGoToFormation = () => { onClose(); navigate(`/formations`); };
     return (
         <div className="text-center">
             <div className="inline-flex p-4 rounded-full bg-red-50 text-red-500 mb-6"><XCircle className="w-8 h-8" /></div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">Candidature non retenue</h3>
             <p className="text-sm text-gray-500 leading-relaxed mb-6 bg-gray-50 p-4 rounded-xl text-left">"Malgré la qualité de votre profil, nous ne pouvons donner suite..."</p>
-            <div className="border-t border-gray-100 pt-6"><Link to="/formations" className="block w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800">Voir d'autres formations</Link></div>
+            <div className="border-t border-gray-100 pt-6"><button onClick={handleGoToFormation} className="block w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-800">Voir d'autres formations</button></div>
         </div>
     );
 }

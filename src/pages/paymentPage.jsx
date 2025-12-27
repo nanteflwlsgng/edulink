@@ -109,7 +109,7 @@ if (isSuccess) {
 
   // --- RESTE DU FORMULAIRE DE PAIEMENT ---
   return (
-    <div className="min-h-screen pt-16 font-poppins flex items-center justify-center py-10 px-4 md:px-6">
+    <div className="min-h-screen py-10 font-poppins flex items-center justify-center px-4 md:px-6">
       
       <div className="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-5 gap-0 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] rounded-[2rem] overflow-hidden bg-white">
         
