@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar";
 import StudentNavbar from "../components/StudentNavbar"; // IMPORT LE NOUVEAU NAVBAR
 import { FormationsSidebar } from "../components/FormationsSidebar";
 import { useAuth } from "../context/AuthContext"; // IMPORT AUTH
+import Footer from "../components/Footer";
 
 export default function Formations() {
   const { user } = useAuth(); // Récupère l'état utilisateur
@@ -140,6 +141,7 @@ export default function Formations() {
           </div>
         </main>
       </div>
+      <Footer/>
     </div>
   );
 }
