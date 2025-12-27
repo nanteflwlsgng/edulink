@@ -400,7 +400,7 @@ export default function FormationDetailsPage() {
                             onClick={handleApply}
                             className="w-full bg-[#370669] text-white py-4 rounded-xl font-bold text-sm hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 shadow-xl shadow-[#370669]/20"
                         >
-                            {user ? "Candidater en 1 clic" : "Je postule maintenant"} 
+                            {"Je postule maintenant"} 
                             <ArrowRight className="w-4 h-4" />
                         </button>
                         

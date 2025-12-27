@@ -10,7 +10,7 @@ export default function Navbar() {
       </div>
 
       {/* Liens du milieu */}
-      <div className="hidden md:flex gap-4 text-gray-900 text-lg">
+      <div className="hidden md:flex gap-4 text-gray-900 text-sm font-semibold">
         <Link to="/" className="hover:text-[#370669] transition-colors">Accueil</Link>
         <Link to="/formations" className="hover:text-[#370669] transition-colors">Formations</Link>
         <Link to="/etablissements" className="hover:text-[#370669] transition-colors">Établissements</Link>
@@ -20,7 +20,7 @@ export default function Navbar() {
       <div className="transition-transform transform hover:scale-105">
         <Link
           to="/compte" // Redirige vers la nouvelle page
-          className="px-4 py-2 text-base bg-[#370669] font-semibold text-white rounded-full"
+          className="px-4 py-2 text-sm bg-[#370669] font-semibold text-white rounded-lg"
         >
           Mon compte
         </Link>
