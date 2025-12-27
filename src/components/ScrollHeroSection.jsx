@@ -91,7 +91,7 @@ const ProfessionalHome = () => {
                 changera votre avenir.
               </span>
             </h1>
-            <p className="hero-content text-lg text-gray-500 mb-8 leading-relaxed">
+            <p className="hero-content text-base text-gray-500 mb-8 leading-relaxed">
               Rejoignez une communauté de 50 000+ étudiants. Comparez, choisissez et postulez aux meilleures formations en toute simplicité.
             </p>
             <div className="hero-content flex flex-wrap gap-4">

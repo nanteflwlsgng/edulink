@@ -75,7 +75,7 @@ export default function StudentDashboard() {
             <h1 className="text-3xl md:text-5xl font-bold text-slate-900 mb-2">
               Bonjour, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#18B49C] to-[#27b6d8]">{user?.firstName || "Étudiant"}</span>.
             </h1>
-            <p className="text-gray-500 text-base md:text-lg">Suivez vos démarches en temps réel.</p>
+            <p className="text-gray-500 text-base">Suivez vos démarches en temps réel.</p>
           </div>
           
           <Link to="/formations" className="group bg-[#370669] text-white px-6 py-4 rounded-xl font-bold shadow-lg shadow-[#370669]/20 hover:scale-105 transition-all flex items-center gap-3">

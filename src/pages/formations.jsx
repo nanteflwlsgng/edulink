@@ -132,7 +132,7 @@ export default function Formations() {
                     </div>
                   </div>
                   <div className="mt-6 flex justify-end">
-                    <Link to={`/formations/${formation.id}`} className="bg-[#f3f0fa] text-[#370669] hover:bg-[#683cc7] hover:text-white px-6 py-2 rounded-full font-bold text-sm transition-all duration-300">Voir le programme</Link>
+                    <Link to={`/formations/${formation.id}`} className="bg-[#f3f0fa] text-[#370669] hover:bg-[#370669] hover:text-white px-6 py-2 rounded-lg font-bold text-sm transition-all duration-300">Voir le programme</Link>
                   </div>
                 </div>
               </div>
