@@ -146,7 +146,7 @@ export default function CandidaturePage() {
     setTimeout(() => {
       setIsSubmitting(false);
       alert("Candidature envoyée avec succès !");
-      navigate("/dashboard");
+      navigate("/studentDashboard");
     }, 2000);
   };
 

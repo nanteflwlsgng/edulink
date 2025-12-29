@@ -10,6 +10,7 @@ import Dashboard from "./pages/studentDashboard"; // 2. On importe le nouveau Da
 import FormationDetailsPage from "./pages/formationDetailsPage";
 import CandidaturePage from "./pages/candidaturePage";
 import PaymentPage from "./pages/paymentPage";
+import SchoolDashboard from "./pages/schoolDashboard";
 
 // 3. On crée un Layout Racine qui englobe toute l'app
 // C'est lui qui distribue la "session" à toutes les pages via <Outlet />
@@ -48,8 +49,12 @@ const router = createBrowserRouter([
         element: <FormationDetailsPage/>,
       },
       {
-        path: "/dashboard", // 4. La route protégée (accessible via logique dans le composant)
+        path: "/studentDashboard", // 4. La route protégée (accessible via logique dans le composant)
         element: <Dashboard/>,
+      },
+      {
+        path: "/schoolDashboard", // 4. La route protégée (accessible via logique dans le composant)
+        element: <SchoolDashboard/>,
       },
       {
         path: "/candidature/:id", // 4. La route protégée (accessible via logique dans le composant)

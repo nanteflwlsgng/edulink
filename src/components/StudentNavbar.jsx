@@ -22,8 +22,8 @@ export default function StudentNavbar() {
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           <Link 
-            to="/dashboard" 
-            className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive('/dashboard') ? 'text-[#18B49C]' : 'text-gray-500 hover:text-slate-900'}`}
+            to="/studentDashboard" 
+            className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive('/studentDashboard') ? 'text-[#18B49C]' : 'text-gray-500 hover:text-slate-900'}`}
           >
             <LayoutDashboard size={18} /> Dashboard
           </Link>

@@ -123,14 +123,29 @@ function AuthForm({ type, onBack, theme }) {
         shakeForm();
         return;
       }
-      const res = login(formData.email, formData.password);
+      const res = login(formData.email, formData.password, type);
+      // const res = register(formData, type);
+      
       if (res.success) {
-        navigate("/dashboard");
-      } else {
+        // Redirection intelligente selon le rôle
+        if (type === 'school') {
+            navigate("/schoolDashboard");
+        } else {
+            navigate("/studentDashboard"); // Ou /dashboard par défaut
+        }
+    } else {
         setError(res.message);
         shakeForm();
-      }
-      return;
+    }
+
+
+      // if (res.success) {
+      //   navigate("/dashboard");
+      // } else {
+      //   setError(res.message);
+      //   shakeForm();
+      // }
+      // return;
     }
 
     // --- LOGIQUE REGISTER ---
@@ -147,13 +162,26 @@ function AuthForm({ type, onBack, theme }) {
         shakeForm();
         return;
       }
-      const res = register(formData);
-      if (res.success) {
-        navigate("/dashboard");
-      } else {
+      // const res = register(formData);
+      // if (res.success) {
+      //   navigate("/dashboard");
+      // } else {
+      //   setError(res.message);
+      //   shakeForm();
+      // }
+      const res = register(formData, type); // 'type' vient des props de AuthForm
+    
+    if (res.success) {
+        // Redirection intelligente selon le rôle
+        if (type === 'school') {
+            navigate("/schoolDashboard");
+        } else {
+            navigate("/studentDashboard"); // Ou /dashboard par défaut
+        }
+    } else {
         setError(res.message);
         shakeForm();
-      }
+    }
     }
   };
 
