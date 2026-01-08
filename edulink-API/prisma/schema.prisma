@@ -1,0 +1,258 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Utilisateur {
+  id_utilisateur Int            @id @default(autoincrement())
+  nom            String         @db.VarChar(50)
+  prenom         String         @db.VarChar(50)
+  email          String         @unique @db.VarChar(50)
+  mot_de_passe   String         @db.VarChar(255)
+  role           Role
+  statut         Statut         @default(ACTIF)
+  admin          Admin?
+  avis           Avis[]
+  etudiant       Etudiant?
+  ecole          Ecole?
+  notifications  Notification[]
+}
+
+model Etudiant {
+  id_etudiant    Int             @id @default(autoincrement())
+  date_naissance DateTime?
+  adresse        String?         @db.VarChar(100)
+  telephone      String?         @db.VarChar(20)
+  id_utilisateur Int             @unique
+  cartes         CarteEtudiant[]
+  utilisateur    Utilisateur     @relation(fields: [id_utilisateur], references: [id_utilisateur])
+  inscriptions   Inscription[]
+}
+
+model Ecole {
+  id_ecole        Int         @id @default(autoincrement())
+  nom             String      @db.VarChar(50)
+  adresse         String?     @db.VarChar(100)  
+  email           String?     @db.VarChar(50)
+  telephone       String?     @db.VarChar(20)
+  id_utilisateur  Int         @unique
+  date_creation   DateTime    @default(now())
+  date_validation DateTime?
+  description     String?     @db.VarChar(500)
+  logo            String?     @db.VarChar(255)
+  site_web        String?     @db.VarChar(100)
+  avis            Avis[]
+  formations      Formation[]
+  utilisateur     Utilisateur @relation(fields: [id_utilisateur], references: [id_utilisateur])
+
+  @@map("ecoles")
+}
+
+model Admin {
+  id_admin       Int         @id @default(autoincrement())
+  id_utilisateur Int         @unique
+  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id_utilisateur])
+}
+
+model Formation {
+  id_formation  Int             @id @default(autoincrement())
+  titre         String          @db.VarChar(150) 
+  description   String?         @db.VarChar(500)
+  duree         Int?
+  prix          Decimal?
+  nbr_max_etudiant Int? 
+  date_creation DateTime        @default(now())
+  date_modification DateTime? 
+  id_ecole      Int
+  statut        FormationStatut @default(ACTIF)
+  evaluations   Evaluation[]
+  ecole         Ecole           @relation(fields: [id_ecole], references: [id_ecole], onDelete: Cascade)
+  inscriptions  Inscription[]
+  sessions      Session[]
+}
+
+model Session {
+  id_session   Int       @id @default(autoincrement())
+  date_debut   DateTime
+  date_fin     DateTime
+  id_formation Int
+  formation    Formation @relation(fields: [id_formation], references: [id_formation])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@map("session")
+
+}
+
+model Inscription {
+  id_inscription   Int               @id @default(autoincrement())
+  date_inscription DateTime          @default(now())
+  statut           StatutInscription @default(EN_ATTENTE)
+  id_etudiant      Int
+  id_formation     Int
+  etudiant         Etudiant          @relation(fields: [id_etudiant], references: [id_etudiant])
+  formation        Formation         @relation(fields: [id_formation], references: [id_formation])
+  paiements        Paiement[]
+ 
+  @@unique([id_etudiant, id_formation])
+  @@map("inscriptions")
+}
+
+
+model Evaluation {
+  id_evaluation            Int           @id @default(autoincrement())
+  type_admission          TypeAdmission  // Enum pour les types d'admission
+  
+  // Dates pour admission sur dossier
+  date_debut_depot_dossier DateTime?
+  date_fin_depot_dossier   DateTime?
+  
+  // Dates pour admission par concours
+  date_debut_concours      DateTime?
+  date_fin_concours        DateTime?
+  
+  // Résultat final
+  date_resultat           DateTime?
+  resultat               String?      @db.VarChar(50) // "admis", "liste_attente", "refusé", etc.
+  
+  // Relation
+  id_formation           Int
+  formation              Formation     @relation(fields: [id_formation], references: [id_formation])
+  
+  // Timestamps
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  
+  @@map("evaluation")
+}
+
+
+model Paiement {
+  id_paiement      Int               @id @default(autoincrement())
+  mode_paiement    ModePaiement
+  methode_paiement MethodePaiement?
+  raison_paiement  RaisonPaiement
+  montant_total    Decimal
+  statut           StatutPaiement    @default(EN_ATTENTE)
+  date_paiement    DateTime?
+  id_inscription   Int?
+  inscription      Inscription?      @relation(fields: [id_inscription], references: [id_inscription])
+  tranches         TranchePaiement[]
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+
+  @@map("paiement")
+}
+model TranchePaiement {
+  id_tranche      Int           @id @default(autoincrement())
+  montant         Decimal
+  date_echance    DateTime
+  statut          StatutPaiement @default(EN_ATTENTE)
+  date_paiement   DateTime?
+  numero_tranche  Int
+  id_paiement     Int
+  paiement        Paiement      @relation(fields: [id_paiement], references: [id_paiement])
+
+  @@map("tranche_paiement")
+}
+
+model CarteEtudiant {
+  id_carte      Int      @id @default(autoincrement())
+  numero_carte  String   @unique
+  date_emission DateTime
+  statut        Statut   @default(ACTIF)
+  id_etudiant   Int
+  etudiant      Etudiant @relation(fields: [id_etudiant], references: [id_etudiant])
+}
+
+model Avis {
+  id_avis        Int         @id @default(autoincrement())
+  commentaire    String      @db.VarChar(500)
+  note           Int
+  id_utilisateur Int
+  id_ecole       Int?
+  ecole          Ecole?      @relation(fields: [id_ecole], references: [id_ecole])
+  utilisateur    Utilisateur @relation(fields: [id_utilisateur], references: [id_utilisateur])
+}
+
+model Notification {
+  id_notification Int         @id @default(autoincrement())
+  type            String      @db.VarChar(50)
+  titre           String      @db.VarChar(100)
+  message         String      @db.VarChar(500)
+  donnees         Json?
+  lue             Boolean     @default(false)
+  date_creation   DateTime    @default(now())
+  id_utilisateur  Int
+  utilisateur     Utilisateur @relation(fields: [id_utilisateur], references: [id_utilisateur], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum Role {
+  ADMIN
+  ETUDIANT
+  ECOLE
+}
+
+enum Statut {
+  ACTIF
+  INACTIF
+  SUSPENDU
+  EN_ATTENTE
+}
+
+enum StatutInscription {
+  EN_ATTENTE
+  VALIDEE
+  ANNULEE
+}
+
+enum StatutPaiement {
+ EN_ATTENTE
+  PAYE
+  ECHEC
+  ANNULE
+  REMBOURSE
+}
+
+enum TypePaiement {
+  MOBILE_MONEY
+  CARTE
+}
+
+enum FormationStatut {
+  EN_ATTENTE
+  ACTIF
+  INACTIF
+  ARCHIVE
+}
+enum TypeAdmission {
+  DIRECT
+  DOSSIER
+  CONCOURS
+  MIXTE
+}
+enum RaisonPaiement {
+  INSCRIPTION
+  DROIT_CONCOURS
+  FRAIS_GENERAUX
+  FRAIS_FORMATION
+  AUTRE
+}
+enum MethodePaiement {
+  CARTE
+  MOBILE_MONEY
+  ESPECES
+  VIREMENT
+}
+enum ModePaiement {
+  UNIQUE
+  MENSUEL
+  TRANCHE
+  GRATUIT
+}
