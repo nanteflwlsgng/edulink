@@ -3,7 +3,10 @@ import { FormationController } from '../controllers/formation.controller.js';
 
 const router = express.Router();
 const formationController = new FormationController();
+
 router.get("/", (req, res) => formationController.listerFormations(req, res));
+router.get('/:id_formation', (req, res) =>  formationController.getFormationById(req, res));
+ 
 /**
  * @swagger
  * tags:

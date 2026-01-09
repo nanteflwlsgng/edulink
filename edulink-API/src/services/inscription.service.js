@@ -6,6 +6,83 @@ const prisma = new PrismaClient();
 
 export class InscriptionService {
   // Valider une inscription
+  /**
+   * Crée une candidature : Met à jour le profil étudiant et crée l'inscription
+   * @param {Object} data - Contient les infos texte et les chemins des fichiers
+   */
+  async creerCandidature(data) {
+    const { 
+      id_utilisateur, id_formation, 
+      telephone, date_naissance, sexe, dernier_diplome, ecole_origine, motivation,
+      cvPath, lettrePath, notesPath, idCardPath 
+    } = data;
+
+    // Utilisation d'une transaction pour garantir l'intégrité des données
+    return await prisma.$transaction(async (tx) => {
+      
+      // 1. Gestion du profil Étudiant (Création ou Mise à jour)
+      let etudiant = await tx.etudiant.findUnique({
+        where: { id_utilisateur: parseInt(id_utilisateur) }
+      });
+
+      const etudiantData = {
+        telephone,
+        date_naissance: date_naissance ? new Date(date_naissance) : null,
+        sexe,
+        dernier_diplome,
+        ecole_origine
+        // Note: nom/prenom/email sont dans la table Utilisateur, on ne les touche pas ici
+      };
+
+      if (!etudiant) {
+        // Création si n'existe pas
+        etudiant = await tx.etudiant.create({
+          data: {
+            id_utilisateur: parseInt(id_utilisateur),
+            ...etudiantData
+          }
+        });
+      } else {
+        // Mise à jour si existe
+        etudiant = await tx.etudiant.update({
+          where: { id_etudiant: etudiant.id_etudiant },
+          data: etudiantData
+        });
+      }
+
+      // 2. Vérification doublon inscription
+      const existingInscription = await tx.inscription.findUnique({
+        where: {
+          id_etudiant_id_formation: {
+            id_etudiant: etudiant.id_etudiant,
+            id_formation: parseInt(id_formation)
+          }
+        }
+      });
+
+      if (existingInscription) {
+        throw new Error("Vous avez déjà postulé à cette formation.");
+      }
+
+      // 3. Création de l'inscription
+      const nouvelleInscription = await tx.inscription.create({
+        data: {
+          id_etudiant: etudiant.id_etudiant,
+          id_formation: parseInt(id_formation),
+          motivation: motivation,
+          statut: "EN_ATTENTE",
+          // Stockage des chemins de fichiers
+          url_cv: cvPath,
+          url_lettre: lettrePath,
+          url_releve_notes: notesPath,
+          url_piece_identite: idCardPath
+        }
+      });
+
+      return nouvelleInscription;
+    });
+  }
+
   async validerInscription(id_inscription) {
     try {
       // Vérifier si l'inscription existe
@@ -307,72 +384,49 @@ async genererRecuPDFDirect(id_inscription) {
   }
 }
   // Méthode supplémentaire : Créer une inscription
-  async creerInscription(id_etudiant, id_formation, statut = 'EN_ATTENTE') {
+  // Récupérer la liste des candidatures pour un utilisateur donné
+  async getCandidaturesByUtilisateur(id_utilisateur) {
     try {
-      // Vérifier si l'étudiant existe
-      const etudiant = await prisma.etudiant.findUnique({
-        where: { id_etudiant }
-      });
-
-      if (!etudiant) {
-        throw new Error("Étudiant non trouvé");
-      }
-
-      // Vérifier si la formation existe
-      const formation = await prisma.formation.findUnique({
-        where: { id_formation }
-      });
-
-      if (!formation) {
-        throw new Error("Formation non trouvée");
-      }
-
-      // Vérifier si l'étudiant est déjà inscrit
-      const inscriptionExistante = await prisma.inscription.findFirst({
+      return await prisma.inscription.findMany({
         where: {
-          id_etudiant,
-          id_formation
-        }
-      });
-
-      if (inscriptionExistante) {
-        throw new Error("L'étudiant est déjà inscrit à cette formation");
-      }
-
-      // Créer l'inscription
-      return await prisma.inscription.create({
-        data: {
-          id_etudiant,
-          id_formation,
-          statut,
-          date_inscription: new Date()
-        },
-        include: {
+          // Ici, on fait le lien : Inscription -> Etudiant -> Utilisateur
+          // On cherche les inscriptions où l'étudiant associé a cet id_utilisateur
           etudiant: {
-            include: {
-              utilisateur: {
-                select: {
-                  nom: true,
-                  prenom: true,
-                  email: true
-                }
-              }
-            }
-          },
+            id_utilisateur: parseInt(id_utilisateur)
+          }
+        },
+        // On inclut les infos utiles pour l'affichage (Titre formation, Nom école)
+        include: {
           formation: {
             select: {
               titre: true,
+              description: true, // Si besoin
               ecole: {
                 select: {
                   nom: true
                 }
               }
             }
+          },
+          // Optionnel : Si vous voulez aussi renvoyer les infos de l'étudiant
+          etudiant: {
+            include: {
+              utilisateur: {
+                select: {
+                  nom: true,
+                  prenom: true
+                }
+              }
+            }
           }
+        },
+        // Pour afficher les plus récentes en premier
+        orderBy: {
+          date_inscription: 'desc'
         }
       });
     } catch (error) {
-      throw new Error(`Erreur lors de la création de l'inscription: ${error.message}`);
+      throw new Error(`Erreur lors de la récupération des candidatures: ${error.message}`);
     }
   }
 }

@@ -7,13 +7,14 @@ import {
 import { useAuth } from "../context/AuthContext";
 import StudentNavbar from "../components/StudentNavbar";
 import Navbar from "../components/Navbar";
-import { MOCK_DATA } from "../dataformation"; 
 
-// --- COMPOSANTS UI EXTERNES (Pour corriger le bug de focus) ---
+// --- COMPOSANTS UI EXTERNES (Modifiés pour gérer les erreurs) ---
 
-const InputField = ({ label, name, type = "text", value, onChange, placeholder, required = true, icon: Icon }) => (
+const InputField = ({ label, name, type = "text", value, onChange, placeholder, required = true, icon: Icon, error, ...props }) => (
   <div className="mb-4">
-    <label className="block text-xs font-bold text-gray-700 uppercase mb-2">{label}</label>
+    <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+    </label>
     <div className="relative">
       <input
         type={type}
@@ -22,35 +23,42 @@ const InputField = ({ label, name, type = "text", value, onChange, placeholder, 
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-[#370669] focus:ring-2 focus:ring-[#370669]/20 outline-none transition-all text-sm bg-white text-slate-800 placeholder:text-gray-400"
+        {...props} // Permet de passer 'max', 'min', etc.
+        className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none transition-all text-sm bg-white text-slate-800 placeholder:text-gray-400 
+        ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-[#370669] focus:ring-[#370669]/20 focus:ring-2'}`}
       />
-      {Icon && <Icon className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />}
+      {Icon && <Icon className={`absolute left-3 top-3.5 w-4 h-4 ${error ? 'text-red-500' : 'text-gray-400'}`} />}
     </div>
+    {/* Message d'erreur */}
+    {error && <p className="text-red-500 text-xs mt-1 ml-1 font-medium animate-pulse">{error}</p>}
   </div>
 );
 
-const SelectField = ({ label, name, value, onChange, options, required = true, icon: Icon }) => (
+const SelectField = ({ label, name, value, onChange, options, required = true, icon: Icon, error }) => (
   <div className="mb-4">
-    <label className="block text-xs font-bold text-gray-700 uppercase mb-2">{label}</label>
+    <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+    </label>
     <div className="relative">
       <select
         name={name}
         required={required}
         value={value}
         onChange={onChange}
-        className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-[#370669] focus:ring-2 focus:ring-[#370669]/20 outline-none transition-all text-sm bg-white text-slate-800 appearance-none"
+        className={`w-full pl-10 pr-4 py-3 rounded-xl border outline-none transition-all text-sm bg-white text-slate-800 appearance-none
+        ${error ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-[#370669] focus:ring-[#370669]/20 focus:ring-2'}`}
       >
         <option value="" disabled>Sélectionner...</option>
         {options.map((opt) => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
-      {Icon && <Icon className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" />}
-      {/* Petite flèche personnalisée pour le select */}
+      {Icon && <Icon className={`absolute left-3 top-3.5 w-4 h-4 ${error ? 'text-red-500' : 'text-gray-400'}`} />}
       <div className="absolute right-4 top-4 pointer-events-none">
          <ChevronRight className="w-3 h-3 text-gray-400 rotate-90" />
       </div>
     </div>
+    {error && <p className="text-red-500 text-xs mt-1 ml-1 font-medium">{error}</p>}
   </div>
 );
 
@@ -90,24 +98,24 @@ export default function CandidaturePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const formation = MOCK_DATA.find((f) => f.id.toString() === id);
-
+  const [formation, setFormation] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // État du formulaire
+  // État des erreurs
+  const [errors, setErrors] = useState({});
+
   const [formData, setFormData] = useState({
-    // Step 1
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
+    firstName: user?.prenom || "", 
+    lastName: user?.nom || "",    
     email: user?.email || "",
     phone: "",
-    birthDate: "", // Nouveau champ
-    gender: "",    // Nouveau champ
+    birthDate: "",
+    gender: "",
     lastDiploma: "",
     schoolOrigin: "",
     motivation: "",
-    // Step 2
     cv: null,
     letter: null,
     transcript: null,
@@ -115,14 +123,108 @@ export default function CandidaturePage() {
   });
 
   useEffect(() => {
-    if (!formation) navigate("/formations");
-  }, [formation, navigate]);
+    const fetchFormation = async () => {
+        try {
+            const response = await fetch(`http://localhost:5000/api/formations/${id}`);
+            const json = await response.json();
+            if (json.success) {
+                setFormation({
+                    id: json.data.id_formation,
+                    title: json.data.titre,
+                    school: json.data.ecole?.nom || "École partenaire"
+                });
+            } else {
+                navigate("/formations");
+            }
+        } catch (error) {
+            console.error("Erreur fetch:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+    if (id) fetchFormation();
+  }, [id, navigate]);
 
-  if (!formation) return null;
+  // --- FONCTION DE VALIDATION ---
+  const validateStep1 = () => {
+    const newErrors = {};
+    const data = formData;
+
+    // 1. Noms
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]+$/;
+    if (!data.firstName.trim()) newErrors.firstName = "Le prénom est requis.";
+    else if (!nameRegex.test(data.firstName)) newErrors.firstName = "Lettres uniquement.";
+    
+    if (!data.lastName.trim()) newErrors.lastName = "Le nom est requis.";
+    else if (!nameRegex.test(data.lastName)) newErrors.lastName = "Lettres uniquement.";
+
+    // 2. Date de naissance (16 ans min, pas de futur)
+    if (!data.birthDate) {
+        newErrors.birthDate = "La date est requise.";
+    } else {
+        const birthDate = new Date(data.birthDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+
+        if (birthDate > today) {
+            newErrors.birthDate = "Impossible de sélectionner une date future.";
+        } else if (age < 16) {
+            newErrors.birthDate = `Vous devez avoir au moins 16 ans (Actuellement : ${age} ans).`;
+        } else if (age > 100) {
+            newErrors.birthDate = "Année de naissance invalide.";
+        }
+    }
+
+    // 3. Sexe
+    if (!data.gender) newErrors.gender = "Veuillez choisir.";
+
+    // 4. Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!data.email.trim()) newErrors.email = "L'email est requis.";
+    else if (!emailRegex.test(data.email)) newErrors.email = "Format invalide.";
+
+    // 5. Téléphone (+261 ou 03...)
+    const phoneRegex = /^(\+261|0)(32|33|34|38)[0-9]{7}$/;
+    const cleanPhone = data.phone.replace(/\s/g, ''); 
+    if (!data.phone.trim()) {
+        newErrors.phone = "Le téléphone est requis.";
+    } else if (!cleanPhone.match(phoneRegex)) {
+        newErrors.phone = "Numéro invalide (Ex: +261 34... ou 034...).";
+    }
+
+    // 6. Diplôme (Pas que des chiffres)
+    if (!data.lastDiploma.trim()) {
+        newErrors.lastDiploma = "Champ requis.";
+    } else if (/^\d+$/.test(data.lastDiploma)) {
+        newErrors.lastDiploma = "Le diplôme doit contenir des lettres.";
+    } else if (data.lastDiploma.length < 2) {
+        newErrors.lastDiploma = "Trop court.";
+    }
+
+    if (!data.schoolOrigin.trim()) newErrors.schoolOrigin = "Champ requis.";
+
+    // 7. Motivation
+    if (!data.motivation.trim()) {
+        newErrors.motivation = "La motivation est requise.";
+    } else if (data.motivation.length < 20) {
+        newErrors.motivation = "Minimum 20 caractères.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Effacer l'erreur en tapant
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: null }));
   };
 
   const handleFileChange = (e, fieldName) => {
@@ -132,29 +234,69 @@ export default function CandidaturePage() {
 
   const handleNext = (e) => {
     e.preventDefault();
-    window.scrollTo(0, 0);
-    setStep(2);
+    // Validation avant de passer à l'étape 2
+    if (validateStep1()) {
+        window.scrollTo(0, 0);
+        setStep(2);
+    } else {
+        window.scrollTo(0, 0); // Remonter pour voir les erreurs
+    }
   };
 
   const handleBack = () => {
     setStep(1);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert("Candidature envoyée avec succès !");
-      navigate("/dashboard");
-    }, 2000);
+
+    try {
+        const dataToSend = new FormData();
+        dataToSend.append('id_formation', id);
+        dataToSend.append('id_utilisateur', user.id_utilisateur);
+        dataToSend.append('prenom', formData.firstName);
+        dataToSend.append('nom', formData.lastName);
+        dataToSend.append('telephone', formData.phone);
+        dataToSend.append('date_naissance', formData.birthDate);
+        dataToSend.append('sexe', formData.gender);
+        dataToSend.append('dernier_diplome', formData.lastDiploma);
+        dataToSend.append('ecole_origine', formData.schoolOrigin);
+        dataToSend.append('motivation', formData.motivation);
+
+        if (formData.cv) dataToSend.append('cv', formData.cv);
+        if (formData.letter) dataToSend.append('lettre_motivation', formData.letter);
+        if (formData.transcript) dataToSend.append('releve_notes', formData.transcript);
+        if (formData.idCard) dataToSend.append('piece_identite', formData.idCard);
+
+        const response = await fetch('http://localhost:5000/api/inscriptions', {
+            method: 'POST',
+            body: dataToSend
+        });
+
+        const result = await response.json();
+
+        if (response.ok && result.success) {
+            alert("Candidature envoyée avec succès !");
+            navigate("/dashboard");
+        } else {
+            alert("Erreur : " + (result.message || "Impossible d'envoyer"));
+        }
+    } catch (error) {
+        console.error("Erreur:", error);
+        alert("Erreur de connexion.");
+    } finally {
+        setIsSubmitting(false);
+    }
   };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (!formation) return null;
 
   return (
     <div className="min-h-screen bg-gray-50 font-poppins text-slate-800">
       {user ? <StudentNavbar /> : <Navbar />}
 
-      {/* En-tête */}
       <div className="bg-[#370669] text-white pt-28 pb-12 px-6">
         <div className="max-w-4xl mx-auto">
             <Link to={`/formations/${id}`} className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm mb-6 transition-colors">
@@ -170,7 +312,6 @@ export default function CandidaturePage() {
       <div className="max-w-4xl mx-auto px-6 -mt-8 pb-20">
         <div className="bg-white rounded-2xl shadow-xl p-6 md:p-10">
             
-            {/* Barre de progression */}
             <div className="flex items-center justify-center mb-10">
                 <div className={`flex items-center gap-2 ${step >= 1 ? 'text-[#370669]' : 'text-gray-300'}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${step >= 1 ? 'bg-[#370669] text-white' : 'bg-gray-100'}`}>1</div>
@@ -185,7 +326,6 @@ export default function CandidaturePage() {
 
             <form onSubmit={step === 1 ? handleNext : handleSubmit}>
                 
-                {/* --- ÉTAPE 1 --- */}
                 {step === 1 && (
                     <div className="animate-fadeIn">
                         <h2 className="text-xl font-bold mb-6 flex items-center gap-2 pb-4 border-b border-gray-100">
@@ -193,11 +333,18 @@ export default function CandidaturePage() {
                         </h2>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Prénom" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Votre prénom" icon={User} />
-                            <InputField label="Nom" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Votre nom" icon={User} />
+                            <InputField 
+                                label="Prénom" name="firstName" value={formData.firstName} 
+                                onChange={handleChange} placeholder="Votre prénom" icon={User} 
+                                error={errors.firstName}
+                            />
+                            <InputField 
+                                label="Nom" name="lastName" value={formData.lastName} 
+                                onChange={handleChange} placeholder="Votre nom" icon={User} 
+                                error={errors.lastName}
+                            />
                         </div>
 
-                        {/* NOUVEAUX CHAMPS ICI */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <InputField 
                                 label="Date de naissance" 
@@ -205,14 +352,14 @@ export default function CandidaturePage() {
                                 type="date" 
                                 value={formData.birthDate} 
                                 onChange={handleChange} 
-                                icon={Calendar} 
+                                icon={Calendar}
+                                error={errors.birthDate}
+                                max={new Date().toISOString().split("T")[0]} // Bloque le futur
                             />
                             <SelectField 
-                                label="Sexe" 
-                                name="gender" 
-                                value={formData.gender} 
-                                onChange={handleChange}
-                                icon={Users}
+                                label="Sexe" name="gender" value={formData.gender} 
+                                onChange={handleChange} icon={Users}
+                                error={errors.gender}
                                 options={[
                                     { value: "M", label: "Masculin" },
                                     { value: "F", label: "Féminin" }
@@ -221,20 +368,38 @@ export default function CandidaturePage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Email" name="email" type="email" value={formData.email} onChange={handleChange} placeholder="exemple@email.com" icon={FileText} />
-                            <InputField label="Téléphone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="+261 34 ..." icon={FileText} />
+                            <InputField 
+                                label="Email" name="email" type="email" value={formData.email} 
+                                onChange={handleChange} placeholder="exemple@email.com" icon={FileText} 
+                                error={errors.email}
+                            />
+                            <InputField 
+                                label="Téléphone" name="phone" type="tel" value={formData.phone} 
+                                onChange={handleChange} placeholder="+261 34 00 000 00" icon={FileText} 
+                                error={errors.phone}
+                            />
                         </div>
 
                         <h2 className="text-xl font-bold mb-6 mt-8 flex items-center gap-2 pb-4 border-b border-gray-100">
                             <GraduationCap className="w-5 h-5 text-[#18B49C]" /> Parcours Académique
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <InputField label="Dernier Diplôme" name="lastDiploma" value={formData.lastDiploma} onChange={handleChange} placeholder="Ex: Baccalauréat, Licence..." icon={GraduationCap} />
-                            <InputField label="Établissement d'origine" name="schoolOrigin" value={formData.schoolOrigin} onChange={handleChange} placeholder="Ex: Lycée Jules Ferry" icon={GraduationCap} />
+                            <InputField 
+                                label="Dernier Diplôme" name="lastDiploma" value={formData.lastDiploma} 
+                                onChange={handleChange} placeholder="Ex: Baccalauréat" icon={GraduationCap} 
+                                error={errors.lastDiploma}
+                            />
+                            <InputField 
+                                label="Établissement d'origine" name="schoolOrigin" value={formData.schoolOrigin} 
+                                onChange={handleChange} placeholder="Ex: Lycée Jules Ferry" icon={GraduationCap} 
+                                error={errors.schoolOrigin}
+                            />
                         </div>
 
                         <div className="mt-4">
-                            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Lettre de motivation (Courte)</label>
+                            <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                Lettre de motivation (Courte) <span className="text-red-500">*</span>
+                            </label>
                             <textarea 
                                 name="motivation"
                                 value={formData.motivation}
@@ -242,8 +407,10 @@ export default function CandidaturePage() {
                                 required
                                 rows="5"
                                 placeholder="Expliquez brièvement pourquoi vous souhaitez rejoindre cette formation..."
-                                className="w-full p-4 rounded-xl border border-gray-200 focus:border-[#370669] focus:ring-2 focus:ring-[#370669]/20 outline-none transition-all text-sm"
+                                className={`w-full p-4 rounded-xl border outline-none transition-all text-sm
+                                ${errors.motivation ? 'border-red-500 focus:ring-red-200' : 'border-gray-200 focus:border-[#370669] focus:ring-[#370669]/20 focus:ring-2'}`}
                             ></textarea>
+                            {errors.motivation && <p className="text-red-500 text-xs mt-1 font-medium">{errors.motivation}</p>}
                         </div>
                         
                         <div className="mt-8 flex justify-end">
@@ -254,13 +421,12 @@ export default function CandidaturePage() {
                     </div>
                 )}
 
-                {/* --- ÉTAPE 2 --- */}
                 {step === 2 && (
                     <div className="animate-fadeIn">
                         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mb-6 flex gap-3">
                              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0" />
                              <p className="text-xs text-blue-800 leading-relaxed">
-                                Veuillez importer des documents lisibles (format PDF ou Image). Si vous n'avez pas tous les documents maintenant, vous pourrez les compléter plus tard depuis votre espace étudiant.
+                                Veuillez importer des documents lisibles. Formats acceptés : PDF, JPG, PNG.
                              </p>
                         </div>
 

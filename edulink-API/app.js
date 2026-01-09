@@ -15,7 +15,7 @@ import avisRoutes from './src/routes/avis.routes.js';
 import carteEtudiantRoutes from './src/routes/carteEtudiant.routes.js';
 import paiementRoutes from './src/routes/paiement.routes.js';
 import tranchePaiementRoutes from './src/routes/tranchePaiement.routes.js';
-
+import favorisRoutes from './src/routes/favoris.routes.js';import path from 'path'; 
 // Charger les variables d'environnement (.env)
 dotenv.config();
 
@@ -48,6 +48,8 @@ app.use('/api/avis', avisRoutes);
 app.use('/api/cartes-etudiant', carteEtudiantRoutes);
 app.use('/api/paiements', paiementRoutes);
 app.use('/api/tranches', tranchePaiementRoutes);
+app.use('/uploads', express.static('uploads')); 
+app.use('/api/favoris', favorisRoutes);
 // Gestion des erreurs 404
 app.use((req, res, next) => {
   res.status(404).json({ message: "Route non trouvée" });

@@ -27,6 +27,40 @@ export class FormationService {
       throw new Error(`Erreur lors de la récupération des formations: ${error.message}`);
     }
   }
+  async getFormationById(idFormation) {
+    try {
+      // Conversion sécurisée en entier
+      const id = parseInt(idFormation, 10);
+
+      if (isNaN(id)) {
+        throw new Error("L'ID de la formation doit être un nombre valide.");
+      }
+
+      const formation = await prisma.formation.findUnique({
+        where: {
+          id_formation: id
+        },
+        include: {
+          // On récupère toutes les infos de l'école (nécessaire pour le front: image, email, etc.)
+          ecole: true, 
+          
+          // On récupère les sessions pour avoir la date de rentrée
+          sessions: {
+            orderBy: {
+              date_debut: 'asc' // La plus proche en premier
+            }
+          },
+          
+          // Optionnel: pour calculer la moyenne si besoin
+          evaluations: true 
+        }
+      });
+
+      return formation;
+    } catch (error) {
+      throw new Error(`Erreur service lors de la récupération de la formation: ${error.message}`);
+    }
+  }
   // Créer une nouvelle session pour une formation
   async ajouterSession(id_formation, data) {
     try {

@@ -29,7 +29,15 @@ export class AvisService {
         throw new Error("École non trouvée");
       }
     }
-    
+    const avisExistant = await prisma.avis.findFirst({
+        where: {
+            id_utilisateur: id_utilisateur,
+            id_ecole: id_ecole
+        }
+    });
+    if (avisExistant) {
+        throw new Error("Vous avez déjà donné votre avis sur cet établissement.");
+    }
     return await prisma.avis.create({
       data: {
         commentaire,

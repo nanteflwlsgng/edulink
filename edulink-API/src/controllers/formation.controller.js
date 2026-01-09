@@ -22,6 +22,35 @@ export class FormationController {
       });
     }
   }
+  async getFormationById(req, res) {
+    try {
+      const { id_formation } = req.params;
+      
+      const formation = await formationService.getFormationById(id_formation);
+
+      // Si la formation n'existe pas (retourne null)
+      if (!formation) {
+        return res.status(404).json({
+          success: false,
+          message: "Formation introuvable."
+        });
+      }
+
+      // Succès
+      res.json({
+        success: true,
+        data: formation
+      });
+
+    } catch (error) {
+      // Erreur serveur ou ID invalide
+      res.status(500).json({
+        success: false,
+        message: error.message
+      });
+    }
+  }
+
   // Ajouter une session à une formation
   async ajouterSession(req, res) {
     try {

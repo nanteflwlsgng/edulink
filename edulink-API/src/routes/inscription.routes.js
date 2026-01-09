@@ -1,9 +1,20 @@
 import express from 'express';
 import { InscriptionController } from '../controllers/inscription.controller.js';
+import { upload } from '../middlewares/upload.js';
 
 const router = express.Router();
 const inscriptionController = new InscriptionController();
+router.get('/mes-candidatures/:id_utilisateur', (req, res) => inscriptionController.recupererCandidaturesEtudiant(req, res));
 
+const uploadFields = upload.fields([
+  { name: 'cv', maxCount: 1 },
+  { name: 'lettre_motivation', maxCount: 1 },
+  { name: 'releve_notes', maxCount: 1 },
+  { name: 'piece_identite', maxCount: 1 }
+]);
+router.post('/', uploadFields, (req, res) => 
+  inscriptionController.creerCandidature(req, res)
+);
 /**
  * @swagger
  * tags:
@@ -41,7 +52,7 @@ const inscriptionController = new InscriptionController();
  *       400:
  *         description: Erreur lors de la création
  */
-router.post('/', inscriptionController.creerInscription);
+
 
 /**
  * @swagger

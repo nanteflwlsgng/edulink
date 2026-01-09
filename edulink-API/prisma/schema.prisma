@@ -27,10 +27,15 @@ model Etudiant {
   date_naissance DateTime?
   adresse        String?         @db.VarChar(100)
   telephone      String?         @db.VarChar(20)
+  sexe           String?   @db.Char(1) // "M" ou "F"
+  dernier_diplome  String?  @db.VarChar(100) // Ex: "Baccalauréat"
+  ecole_origine   String?   @db.VarChar(150) // Ex: "Lycée X"
   id_utilisateur Int             @unique
   cartes         CarteEtudiant[]
   utilisateur    Utilisateur     @relation(fields: [id_utilisateur], references: [id_utilisateur])
   inscriptions   Inscription[]
+   favoris Favoris[] 
+
 }
 
 model Ecole {
@@ -39,6 +44,7 @@ model Ecole {
   adresse         String?     @db.VarChar(100)  
   email           String?     @db.VarChar(50)
   telephone       String?     @db.VarChar(20)
+  type         TypeEtablissement @default(ECOLE)
   id_utilisateur  Int         @unique
   date_creation   DateTime    @default(now())
   date_validation DateTime?
@@ -62,17 +68,27 @@ model Formation {
   id_formation  Int             @id @default(autoincrement())
   titre         String          @db.VarChar(150) 
   description   String?         @db.VarChar(500)
-  duree         Int?
   prix          Decimal?
   nbr_max_etudiant Int? 
   date_creation DateTime        @default(now())
   date_modification DateTime? 
+
+  categorie    CategorieFormation  @default(INFORMATIQUE)
+  niveau       NiveauFormation    @default(LICENCE)
+  
+  mode          ModeFormation      @default(PRESENTIEL)
+  continent    Continent?         @default(AFRIQUE)
+  ville        String?            // Ex: "Dakar"
+  duree        DureeStandard      @default(ANS_3)
+  langue        String          @default("Français") @db.VarChar(50)
+  type_admission String         @default("Dossier") @db.VarChar(100)
   id_ecole      Int
   statut        FormationStatut @default(ACTIF)
   evaluations   Evaluation[]
   ecole         Ecole           @relation(fields: [id_ecole], references: [id_ecole], onDelete: Cascade)
   inscriptions  Inscription[]
   sessions      Session[]
+  favoris Favoris[] 
 }
 
 model Session {
@@ -92,6 +108,15 @@ model Inscription {
   id_inscription   Int               @id @default(autoincrement())
   date_inscription DateTime          @default(now())
   statut           StatutInscription @default(EN_ATTENTE)
+
+  motivation          String?  @db.Text
+  
+  // Chemins vers les fichiers uploadés (Stockés sur le serveur, on garde le lien ici)
+  url_cv              String?  @db.VarChar(255)
+  url_lettre          String?  @db.VarChar(255)
+  url_releve_notes    String?  @db.VarChar(255)
+  url_piece_identite  String?  @db.VarChar(255)
+
   id_etudiant      Int
   id_formation     Int
   etudiant         Etudiant          @relation(fields: [id_etudiant], references: [id_etudiant])
@@ -193,6 +218,19 @@ model Notification {
   @@map("notifications")
 }
 
+model Favoris {
+  id_etudiant   Int
+  id_formation  Int
+  date_ajout    DateTime @default(now())
+  
+  // Relations
+  etudiant      Etudiant  @relation(fields: [id_etudiant], references: [id_etudiant])
+  formation     Formation @relation(fields: [id_formation], references: [id_formation])
+
+  // Clé primaire composée (un étudiant ne peut liker qu'une fois la même formation)
+  @@id([id_etudiant, id_formation])
+}
+
 enum Role {
   ADMIN
   ETUDIANT
@@ -255,4 +293,55 @@ enum ModePaiement {
   MENSUEL
   TRANCHE
   GRATUIT
+}
+enum CategorieFormation {
+  MARKETING
+  COMMERCE
+  SCIENCE
+  POLITIQUE
+  INFORMATIQUE
+  TECHNOLOGIE
+  ELECTRONIQUE
+  AUTRE
+}
+
+enum NiveauFormation {
+  BAC
+  CERTIFICAT
+  LICENCE
+  MASTER
+  DOCTORAT
+  PROFESSEUR
+}
+
+enum Continent {
+  AFRIQUE
+  AMERIQUE
+  EUROPE
+  ASIE
+  OCEANIE
+  ANTARCTIQUE
+}
+
+enum TypeEtablissement {
+  CENTRE_FORMATION
+  ECOLE
+  INSTITUT
+  COURS_LANGUE
+  UNIVERSITE
+}
+enum DureeStandard {
+  MOIS_3   // "3 mois"
+  MOIS_6   // "6 mois"
+  AN_1     // "1 an"
+  ANS_2    // "2 ans"
+  ANS_3    // "3 ans"
+  ANS_5    // "5 ans"
+  ANS_7    // "7 ans" (Médecine, etc.)
+  ANS_12   // "12 ans"
+}
+enum ModeFormation {
+  PRESENTIEL
+  DISTANCIEL
+  MIXTE
 }
