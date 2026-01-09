@@ -91,7 +91,7 @@ if (isSuccess) {
           {/* Boutons (Action principale + Secondaire) */}
           <div className="space-y-3">
             <button 
-                onClick={() => navigate("/dashboard")} 
+                onClick={() => navigate("/studentDashboard")} 
                 className="w-full bg-[#370669] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-[#2b0554] hover:shadow-lg hover:shadow-[#370669]/20 transition-all flex items-center justify-center gap-2"
             >
                 <Home className="w-4 h-4" /> Retour au Dashboard
