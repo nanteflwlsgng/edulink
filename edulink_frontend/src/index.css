@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Place les @font-face APRES les directives Tailwind pour être sûr */
+
+@font-face {
+  font-family: 'OrangeAvenue';
+  /* CORRECT : Le chemin part de la racine du site */
+  src: url('/font/OrangeAvenueDEMO-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'OrangeAvenueOutline';
+  /* CORRECT : Le chemin part de la racine du site */
+  src: url('/font/OrangeAvenueOutlineDEMO-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'AvenueX';
+  /* CORRECT : Le chemin part de la racine du site */
+  src: url('/font/AvenueX-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+body {
+  @apply font-poppins;
+}
+
+/* Dans index.css */
+.font-outline {
+  -webkit-text-stroke: 1px currentColor;
+  color: transparent;
+}
