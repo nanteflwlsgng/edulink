@@ -217,9 +217,11 @@ export default function SchoolDashboard() {
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col justify-between z-20 shadow-sm flex-shrink-0">
         <div>
           <div className="p-8 flex items-center gap-3">
-             <div className="w-10 h-10 bg-[#27b6d8] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-[#27b6d8]/20">E</div>
-             <span className="font-bold text-lg text-slate-800 tracking-tight">EduManager</span>
+          <img src="/icons8-éducation-64 1.png" alt="Logo" className="h-10 w-10" />
+             <span className="font-bold text-lg text-[#370669] tracking-tight">EduLink</span>
           </div>
+          {/* <img src="/icons8-éducation-64 1.png" alt="Logo" className="h-10 w-10" />
+        <span className="text-lg font-bold text-[#370669]">EduLink</span> */}
           <nav className="px-4 space-y-1">
             <SidebarItem icon={LayoutDashboard} label="Tableau de bord" active={activeTab === "overview"} onClick={() => setActiveTab("overview")} />
             <SidebarItem icon={BookOpen} label="Mes Formations" active={activeTab === "formations"} onClick={() => setActiveTab("formations")} />
@@ -368,7 +370,7 @@ function FormationsTab({ formations, onCreate, onEdit, onDelete }) {
         <div className="space-y-6 animate-fadeIn">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-bold text-slate-900">Catalogue des formations</h3>
-                <button onClick={onCreate} className="bg-[#27b6d8] text-white px-5 py-3 rounded-xl text-sm font-bold flex gap-2 hover:shadow-lg transition-all"><Plus className="w-4 h-4"/> Créer</button>
+                <button onClick={onCreate} className="bg-gradient-to-r from-[#370669] to-[#5b2299] text-white px-5 py-3 rounded-xl text-sm font-bold flex gap-2 hover:shadow-lg transition-all"><Plus className="w-4 h-4"/> Créer</button>
             </div>
             
             {formations.length === 0 ? (
