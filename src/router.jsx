@@ -11,6 +11,7 @@ import FormationDetailsPage from "./pages/formationDetailsPage";
 import CandidaturePage from "./pages/candidaturePage";
 import PaymentPage from "./pages/paymentPage";
 import SchoolDashboard from "./pages/schoolDashboard";
+import AdminDashboard from "./pages/adminDashboard";
 
 // 3. On crée un Layout Racine qui englobe toute l'app
 // C'est lui qui distribue la "session" à toutes les pages via <Outlet />
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
       {
         path: "/paiement/:id", // 4. La route protégée (accessible via logique dans le composant)
         element: <PaymentPage/>,
+      },
+      {
+        path: "/adminDashboard", // 4. La route protégée (accessible via logique dans le composant)
+        element: <AdminDashboard/>,
       },
     ],
   },

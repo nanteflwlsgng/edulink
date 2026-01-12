@@ -3,12 +3,14 @@ import {
   LayoutDashboard, BookOpen, Users, CreditCard, Settings, LogOut, 
   Plus, Trash2, Eye, CheckCircle2, FileText, 
   Building2, Globe, Mail, Phone, Download, 
-  DollarSign, Search, Calendar, Filter, ArrowUpRight, BadgeCheck, Bell, Clock, AlertTriangle, X
+  DollarSign, Search, Calendar, Filter, ArrowUpRight, BadgeCheck, Bell, Clock, AlertTriangle, X, Sparkles, LayoutList, LayoutGrid
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import FormationModal from "../components/FormationModal"; 
 import CandidatureModal from "../components/CandidatureModal";
+import SelectionIAModal from "../components/SelectionIAModal";
+import FloatingAssistant from "../components/FloatingAssistant";
 import Toast from "../components/Toast";
 
 // ==========================================
@@ -25,6 +27,7 @@ const MOCK_CANDIDATS = [
   { id: 104, name: "Alice Merveille", formation: "Master Web", date: "2026-01-01", status: "Inscrit", image: "https://i.pravatar.cc/150?u=104", cin: "101 234 567 890", matricule: "2025-WEB-001" },
   { id: 105, name: "John Doe", formation: "Licence Marketing", date: "2025-12-28", status: "Refusé", image: "https://i.pravatar.cc/150?u=105" },
   { id: 106, name: "Lucas Sky", formation: "Master Web", date: "2026-01-07", status: "Vu", image: "https://i.pravatar.cc/150?u=106" },
+  // ... autres faux candidats pour tester
 ];
 
 const MOCK_TRANSACTIONS = [
@@ -36,7 +39,7 @@ const MOCK_TRANSACTIONS = [
 // COMPOSANT PRINCIPAL
 // ==========================================
 export default function SchoolDashboard() {
-  const { user, logout, updateUser } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   
   // Navigation & Data
@@ -45,9 +48,16 @@ export default function SchoolDashboard() {
   const [candidats, setCandidats] = useState(MOCK_CANDIDATS);
   const [transactions, setTransactions] = useState(MOCK_TRANSACTIONS);
 
-  // UI States (Toast & Confirmation)
+  // UI States
   const [toast, setToast] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: "", message: "", onConfirm: null });
+
+  // Modals
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingFormation, setEditingFormation] = useState(null);
+  const [isCandidatureModalOpen, setIsCandidatureModalOpen] = useState(false);
+  const [selectedCandidat, setSelectedCandidat] = useState(null);
+  const [isIAModalOpen, setIsIAModalOpen] = useState(false);
 
   // --- HELPERS UI ---
   const showToast = (type, message) => {
@@ -57,18 +67,12 @@ export default function SchoolDashboard() {
 
   const openConfirmation = (title, message, onConfirmAction) => {
     setConfirmModal({
-        isOpen: true,
-        title,
-        message,
-        onConfirm: () => {
-            onConfirmAction();
-            setConfirmModal({ ...confirmModal, isOpen: false });
-        }
+        isOpen: true, title, message,
+        onConfirm: () => { onConfirmAction(); setConfirmModal({ ...confirmModal, isOpen: false }); }
     });
   };
 
   // --- LOGIQUE METIER ---
-
   const stats = {
     totalStudents: candidats.filter(c => c.status === 'Inscrit').length, 
     pendingReview: candidats.filter(c => ['En attente', 'Vu'].includes(c.status)).length,
@@ -76,20 +80,14 @@ export default function SchoolDashboard() {
     revenue: transactions.filter(t => t.status === 'Validé').length * 900000, 
   };
 
-  // 1. Validation Paiement
   const handleValidateTransaction = (txId, studentId) => {
-    openConfirmation(
-        "Valider le paiement ?",
-        "Cette action est irréversible. L'étudiant sera inscrit définitivement.",
-        () => {
-            setTransactions(transactions.map(t => t.id === txId ? { ...t, status: "Validé" } : t));
-            setCandidats(candidats.map(c => c.id === studentId ? { ...c, status: "Inscrit", matricule: `2025-${Math.floor(Math.random()*1000)}` } : c));
-            showToast("success", "Paiement validé ! L'étudiant est inscrit.");
-        }
-    );
+    openConfirmation("Valider le paiement ?", "Cette action est irréversible. L'étudiant sera inscrit définitivement.", () => {
+        setTransactions(transactions.map(t => t.id === txId ? { ...t, status: "Validé" } : t));
+        setCandidats(candidats.map(c => c.id === studentId ? { ...c, status: "Inscrit", matricule: `2025-${Math.floor(Math.random()*1000)}` } : c));
+        showToast("success", "Paiement validé ! L'étudiant est inscrit.");
+    });
   };
 
-  // 2. Décision Candidature
   const handleCandidatureDecision = (id, decision) => {
     if (decision === 'Notifier') {
         showToast("info", "Rappel envoyé à l'étudiant avec succès.");
@@ -101,34 +99,40 @@ export default function SchoolDashboard() {
     showToast(decision === 'Admis' ? 'success' : 'warning', `Dossier ${decision === 'Admis' ? 'accepté' : 'refusé'}.`);
   };
 
-  // 3. Gestion Formations
+  const handleApplyIASelection = (rankedResults, quota) => {
+    const updatedCandidats = [...candidats];
+    rankedResults.forEach((rankedCandidat, index) => {
+        const mainIndex = updatedCandidats.findIndex(c => c.id === rankedCandidat.id);
+        if (mainIndex !== -1) {
+            updatedCandidats[mainIndex] = {
+                ...updatedCandidats[mainIndex],
+                status: index < quota ? 'Admis' : 'Refusé',
+                aiScore: rankedCandidat.score,
+                aiRank: index + 1
+            };
+        }
+    });
+    setCandidats(updatedCandidats);
+    showToast("success", "Sélection IA appliquée avec succès !");
+  };
+
   const handleSaveFormation = (data) => {
     if (editingFormation) {
       setFormations(formations.map(f => f.id === editingFormation.id ? { ...f, ...data } : f));
       showToast("success", "Formation mise à jour.");
     } else {
       setFormations([{ id: Date.now(), ...data, students: 0, status: data.status || "Publié" }, ...formations]);
-      showToast("success", data.status === "Brouillon" ? "Brouillon sauvegardé." : "Formation publiée !");
+      showToast("success", "Formation créée !");
     }
   };
 
   const handleDeleteFormation = (id, e) => {
     e.stopPropagation();
-    openConfirmation(
-        "Supprimer la formation ?",
-        "Êtes-vous sûr ? Cette action retirera la formation du catalogue.",
-        () => {
-            setFormations(formations.filter(f => f.id !== id));
-            showToast("info", "Formation supprimée.");
-        }
-    );
+    openConfirmation("Supprimer la formation ?", "Êtes-vous sûr ? Cette action est définitive.", () => {
+        setFormations(formations.filter(f => f.id !== id));
+        showToast("info", "Formation supprimée.");
+    });
   };
-
-  // --- MODALS STATES ---
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingFormation, setEditingFormation] = useState(null);
-  const [isCandidatureModalOpen, setIsCandidatureModalOpen] = useState(false);
-  const [selectedCandidat, setSelectedCandidat] = useState(null);
 
   const openCandidature = (candidat) => {
     if (candidat.status === "En attente") {
@@ -146,7 +150,7 @@ export default function SchoolDashboard() {
     switch (activeTab) {
       case "overview": return <OverviewTab stats={stats} transactions={transactions} goToFinances={() => setActiveTab('finances')} />;
       case "formations": return <FormationsTab formations={formations} onCreate={() => {setEditingFormation(null); setIsModalOpen(true)}} onEdit={(f) => {setEditingFormation(f); setIsModalOpen(true)}} onDelete={handleDeleteFormation} />;
-      case "candidatures": return <CandidaturesTab candidats={candidats} onOpen={openCandidature} />;
+      case "candidatures": return <CandidaturesTab candidats={candidats} onOpen={openCandidature} onOpenIA={() => setIsIAModalOpen(true)} />;
       case "finances": return <FinancesTab transactions={transactions} onValidate={handleValidateTransaction} />;
       case "students": return <StudentCardsTab candidats={candidats} />;
       case "settings": return <div className="p-10 text-gray-400">Paramètres</div>;
@@ -157,7 +161,7 @@ export default function SchoolDashboard() {
   return (
     <div className="flex h-screen bg-[#f8f9fc] font-poppins text-slate-800 overflow-hidden">
       
-      {/* SIDEBAR (DESIGN RESTAURÉ : BLANC) */}
+      {/* SIDEBAR */}
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col justify-between z-20 shadow-sm flex-shrink-0">
         <div>
           <div className="p-8 flex items-center gap-3">
@@ -181,7 +185,7 @@ export default function SchoolDashboard() {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
         <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-8 flex-shrink-0">
-            <h2 className="text-xl font-bold text-slate-900 capitalize">{activeTab === 'overview' ? 'Vue d\'ensemble' : activeTab === 'students' ? 'Registre des étudiants' : activeTab}</h2>
+            <h2 className="text-xl font-bold text-slate-800 capitalize">{activeTab === 'overview' ? 'Vue d\'ensemble' : activeTab === 'students' ? 'Registre des étudiants' : activeTab}</h2>
             <div className="flex items-center gap-4">
                 <div className="text-right hidden sm:block">
                     <div className="text-sm font-bold text-slate-900">{user?.schoolName || "Mon Etablissement"}</div>
@@ -197,22 +201,14 @@ export default function SchoolDashboard() {
       </main>
 
       {/* --- OVERLAYS --- */}
-      
-      {/* Toast Notification */}
       {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+      
+      {confirmModal.isOpen && <ConfirmationDialog title={confirmModal.title} message={confirmModal.message} onConfirm={confirmModal.onConfirm} onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })} />}
 
-      {/* Custom Confirmation Modal */}
-      {confirmModal.isOpen && (
-          <ConfirmationDialog 
-              title={confirmModal.title} 
-              message={confirmModal.message} 
-              onConfirm={confirmModal.onConfirm} 
-              onCancel={() => setConfirmModal({ ...confirmModal, isOpen: false })} 
-          />
-      )}
+      <FloatingAssistant isVisible={activeTab === 'candidatures'} onClick={() => setIsIAModalOpen(true)} />
 
-      {/* Feature Modals */}
       <FormationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSubmit={handleSaveFormation} initialData={editingFormation} />
+      
       <CandidatureModal 
         isOpen={isCandidatureModalOpen} 
         onClose={() => setIsCandidatureModalOpen(false)} 
@@ -220,140 +216,109 @@ export default function SchoolDashboard() {
         onAction={handleCandidatureDecision} 
         customActions={['Vu', 'En attente'].includes(selectedCandidat?.status) ? 'decision' : 'notify'}
       />
+
+      <SelectionIAModal 
+        isOpen={isIAModalOpen} 
+        onClose={() => setIsIAModalOpen(false)} 
+        candidats={candidats} 
+        formations={formations}
+        onApplySelection={handleApplyIASelection}
+      />
     </div>
   );
 }
 
 // ==========================================
-// 2. CANDIDATURES (TRI, RECHERCHE, FILTRE)
+// TABS COMPONENTS
 // ==========================================
 
-// Fonction utilitaire Date Relative
-const getRelativeTime = (dateStr) => {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffTime = now - date;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
-
-    if (diffDays === 0) return "Aujourd'hui";
-    if (diffDays === 1) return "Hier";
-    if (diffDays < 7) return `Il y a ${diffDays} jours`;
-    if (diffDays < 14) return "Il y a 1 semaine";
-    if (diffDays < 30) return "Il y a +2 semaines";
-    return "Il y a +1 mois";
-};
-
-function CandidaturesTab({ candidats, onOpen }) {
+// --- CANDIDATURES ---
+function CandidaturesTab({ candidats, onOpen, onOpenIA }) {
     const [searchTerm, setSearchTerm] = useState("");
-    const [filterStatus, setFilterStatus] = useState("Tous"); // 'Tous', 'À traiter', 'Admis', 'Refusé'
+    const [filterStatus, setFilterStatus] = useState("Tous");
+    const [viewMode, setViewMode] = useState("grid"); // 'grid' | 'list'
 
-    // LOGIQUE DE TRI ET FILTRAGE
     const processedCandidats = candidats
-        .filter(c => c.status !== 'Inscrit') // On exclut les inscrits définitifs
+        .filter(c => c.status !== 'Inscrit')
         .filter(c => {
             const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                   c.formation.toLowerCase().includes(searchTerm.toLowerCase());
-            
             if (filterStatus === "Tous") return matchesSearch;
             if (filterStatus === "À traiter") return matchesSearch && ['En attente', 'Vu'].includes(c.status);
             return matchesSearch && c.status === filterStatus;
         })
-        .sort((a, b) => new Date(b.date) - new Date(a.date)); // Tri Descendant (Plus récent en premier)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return (
         <div className="space-y-6 animate-fadeIn">
-            {/* Header avec Recherche et Filtres */}
+            {/* Header Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <h3 className="text-lg font-bold text-slate-900">Demandes d'admission</h3>
+                <div className="flex items-center gap-4">
+                    <h3 className="text-lg font-bold text-slate-900">Demandes d'admission</h3>
+                    <button onClick={onOpenIA} className="bg-gradient-to-r from-[#370669] to-[#5b2299] text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg hover:scale-105 transition-transform"><Sparkles className="w-3.5 h-3.5 text-[#27b6d8]" /> Assistant IA</button>
+                </div>
                 
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="flex flex-col sm:flex-row gap-3 items-center">
+                    <div className="bg-white p-1 rounded-xl border border-gray-200 flex">
+                        <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-colors ${viewMode === 'grid' ? 'bg-[#370669] text-white shadow-sm' : 'text-gray-400 hover:text-[#370669]'}`}><LayoutGrid className="w-4 h-4" /></button>
+                        <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg transition-colors ${viewMode === 'list' ? 'bg-[#370669] text-white shadow-sm' : 'text-gray-400 hover:text-[#370669]'}`}><LayoutList className="w-4 h-4" /></button>
+                    </div>
                     <div className="relative">
                         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-3" />
-                        <input 
-                            type="text" 
-                            placeholder="Rechercher..." 
-                            className="pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#370669] w-full sm:w-64 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+                        <input type="text" placeholder="Rechercher..." className="pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-[#370669] w-full sm:w-64 transition-all" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     </div>
                     <div className="flex bg-white rounded-xl border border-gray-200 p-1">
                         {["Tous", "À traiter", "Admis", "Refusé"].map((status) => (
-                            <button
-                                key={status}
-                                onClick={() => setFilterStatus(status)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                                    filterStatus === status 
-                                    ? 'bg-[#370669] text-white shadow-sm' 
-                                    : 'text-gray-500 hover:bg-gray-50'
-                                }`}
-                            >
-                                {status}
-                            </button>
+                            <button key={status} onClick={() => setFilterStatus(status)} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${filterStatus === status ? 'bg-[#370669] text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>{status}</button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Grille Candidats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {processedCandidats.length > 0 ? (
-                    processedCandidats.map(c => (
+            {/* Content */}
+            {viewMode === "grid" ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {processedCandidats.map(c => (
                         <div key={c.id} onClick={() => onOpen(c)} className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden group cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1">
-                            
-                            {/* Time Badge */}
-                            <div className="absolute top-0 left-0 bg-gray-50 px-3 py-1.5 rounded-br-2xl border-b border-r border-gray-100">
-                                <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> {getRelativeTime(c.date)}
-                                </span>
-                            </div>
-
-                            {/* Status Badge (Vu/Nouveau) */}
-                            {(c.status === 'Vu' || c.status === 'En attente') && (
-                                <div className="absolute top-4 right-4 bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-blue-100">
-                                    <Eye className="w-3 h-3" /> {c.status === 'Vu' ? 'Vu' : 'Nouveau'}
-                                </div>
-                            )}
-
+                            <div className="absolute top-0 left-0 bg-gray-50 px-3 py-1.5 rounded-br-2xl border-b border-r border-gray-100"><span className="text-[10px] font-bold text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> {getRelativeTime(c.date)}</span></div>
+                            {(c.status === 'Vu' || c.status === 'En attente') && <div className="absolute top-4 right-4 bg-blue-50 text-blue-600 px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 border border-blue-100"><Eye className="w-3 h-3" /> {c.status === 'Vu' ? 'Vu' : 'Nouveau'}</div>}
                             <div className="flex items-center gap-4 mb-6 mt-4">
                                 <img src={c.image} alt="" className="w-14 h-14 rounded-2xl object-cover shadow-sm" />
-                                <div>
-                                    <h4 className="font-bold text-slate-900 text-sm leading-tight mb-1">{c.name}</h4>
-                                    <p className="text-xs text-gray-500">{c.formation}</p>
-                                </div>
+                                <div><h4 className="font-bold text-slate-900 text-sm leading-tight mb-1">{c.name}</h4><p className="text-xs text-gray-500">{c.formation}</p></div>
                             </div>
-
                             <div className="flex justify-between items-center pt-4 border-t border-gray-50">
-                                <span className="text-[10px] font-bold text-gray-400">Reçu le {c.date}</span>
-                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${
-                                    c.status === 'Admis' ? 'bg-purple-50 text-purple-600 border-purple-100' : 
-                                    c.status === 'Refusé' ? 'bg-red-50 text-red-600 border-red-100' : 
-                                    'bg-gray-50 text-gray-600 border-gray-200'
-                                }`}>
-                                    {c.status === 'Admis' ? 'Admissible' : c.status === 'Refusé' ? 'Archivé' : 'À Traiter'}
-                                </span>
+                                {c.aiScore ? <span className="text-[10px] font-bold text-[#18B49C] bg-[#18B49C]/10 px-2 py-1 rounded-md">Score IA: {c.aiScore}</span> : <span className="text-[10px] font-bold text-gray-400">Reçu le {c.date}</span>}
+                                <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide border ${c.status === 'Admis' ? 'bg-purple-50 text-purple-600 border-purple-100' : c.status === 'Refusé' ? 'bg-red-50 text-red-600 border-red-100' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>{c.status === 'Admis' ? 'Admissible' : c.status === 'Refusé' ? 'Archivé' : 'À Traiter'}</span>
                             </div>
                         </div>
-                    ))
-                ) : (
-                    <div className="col-span-full py-20 text-center">
-                        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                            <Search className="w-6 h-6 text-gray-300" />
-                        </div>
-                        <p className="text-gray-400 text-sm font-medium">Aucun dossier ne correspond à votre recherche.</p>
-                    </div>
-                )}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="bg-white rounded-[2rem] border border-gray-100 overflow-hidden shadow-sm">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-gray-50/50 text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                            <tr><th className="px-6 py-4">Candidat</th><th className="px-6 py-4">Formation</th><th className="px-6 py-4">Date</th><th className="px-6 py-4 text-center">Rang IA</th><th className="px-6 py-4">Statut</th><th className="px-6 py-4 text-right">Action</th></tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {processedCandidats.map(c => (
+                                <tr key={c.id} onClick={() => onOpen(c)} className="hover:bg-gray-50 cursor-pointer group">
+                                    <td className="px-6 py-4"><div className="flex items-center gap-3"><img src={c.image} alt="" className="w-10 h-10 rounded-full object-cover" /><span className="font-bold text-slate-900 text-sm">{c.name}</span></div></td>
+                                    <td className="px-6 py-4 text-xs text-gray-500 font-medium">{c.formation}</td>
+                                    <td className="px-6 py-4 text-xs text-gray-400">{getRelativeTime(c.date)}</td>
+                                    <td className="px-6 py-4 text-center">{c.aiRank ? <span className="inline-block w-6 h-6 rounded-full bg-[#18B49C]/10 text-[#18B49C] text-xs font-bold leading-6">{c.aiRank}</span> : <span className="text-gray-300">-</span>}</td>
+                                    <td className="px-6 py-4"><span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${c.status === 'Admis' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>{c.status}</span></td>
+                                    <td className="px-6 py-4 text-right"><button className="text-gray-300 hover:text-[#370669] transition-colors"><ArrowUpRight className="w-4 h-4" /></button></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }
 
-// ==========================================
-// 3. AUTRES TABS & HELPERS
-// ==========================================
-
-// Fonction utilitaire expiration
+// --- FORMATIONS ---
 const isExpired = (endDateStr) => {
     if (!endDateStr) return false;
     const end = new Date(endDateStr);
@@ -405,6 +370,42 @@ function FormationsTab({ formations, onCreate, onEdit, onDelete }) {
     );
 }
 
+// --- OVERVIEW ---
+function OverviewTab({ stats, transactions, goToFinances }) {
+    return (
+        <div className="space-y-8 animate-fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <StatCard title="Inscrits Définitifs" value={stats.totalStudents} icon={BadgeCheck} color="#18B49C" trend="+12%" />
+                <StatCard title="Dossiers à traiter" value={stats.pendingReview} icon={FileText} color="#f59e0b" trend="Urgent" />
+                <StatCard title="Paiements en attente" value={stats.pendingMoney} icon={DollarSign} color="#370669" trend="Action" />
+                <StatCard title="Chiffre d'affaires" value={`${(stats.revenue/1000000).toFixed(1)} M Ar`} icon={ArrowUpRight} color="#27b6d8" trend="+5%" />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[300px]">
+                    <div className="flex justify-between items-center mb-8"><div><h3 className="font-bold text-slate-900 text-lg">Évolution</h3><p className="text-xs text-gray-400">Année 2024-2025</p></div></div>
+                    <div className="flex items-end justify-between h-48 w-full gap-4 px-2">
+                        {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 65].map((h, i) => (
+                            <div key={i} className="w-full bg-gray-50 rounded-t-lg relative group h-full flex items-end"><div style={{ height: `${h}%` }} className="w-full bg-[#27b6d8] rounded-t-lg opacity-80 group-hover:opacity-100 transition-all duration-500 relative"></div></div>
+                        ))}
+                    </div>
+                </div>
+                <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
+                    <div className="flex justify-between items-center mb-6 relative z-10"><h3 className="font-bold text-slate-900">Activité Financière</h3><button onClick={goToFinances} className="text-xs text-[#27b6d8] font-bold hover:underline">Voir tout</button></div>
+                    <div className="space-y-4 relative z-10">
+                        {transactions.filter(t => t.status === 'En attente').length === 0 ? <div className="text-center py-10 text-gray-400 text-sm">Aucune transaction en attente.</div> : transactions.filter(t => t.status === 'En attente').map(t => (
+                            <div key={t.id} onClick={goToFinances} className="p-4 bg-orange-50 hover:bg-orange-100 rounded-2xl border border-orange-100 cursor-pointer transition-colors group">
+                                <p className="text-sm font-bold text-slate-900">{t.studentName} a payé</p>
+                                <div className="flex justify-between items-center"><p className="text-xs text-gray-500">{t.formation}</p><span className="font-bold text-slate-900">{t.amount}</span></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// --- STUDENT CARDS ---
 function StudentCardsTab({ candidats }) {
     const enrolled = candidats.filter(c => c.status === 'Inscrit');
     const [filterName, setFilterName] = useState("");
@@ -463,40 +464,6 @@ function StudentCardsTab({ candidats }) {
     );
 }
 
-function OverviewTab({ stats, transactions, goToFinances }) {
-    return (
-        <div className="space-y-8 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <StatCard title="Inscrits Définitifs" value={stats.totalStudents} icon={BadgeCheck} color="#18B49C" trend="+12%" />
-                <StatCard title="Dossiers à traiter" value={stats.pendingReview} icon={FileText} color="#f59e0b" trend="Urgent" />
-                <StatCard title="Paiements en attente" value={stats.pendingMoney} icon={DollarSign} color="#370669" trend="Action" />
-                <StatCard title="Chiffre d'affaires" value={`${(stats.revenue/1000000).toFixed(1)} M Ar`} icon={ArrowUpRight} color="#27b6d8" trend="+5%" />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col justify-between min-h-[300px]">
-                    <div className="flex justify-between items-center mb-8"><div><h3 className="font-bold text-slate-900 text-lg">Évolution</h3><p className="text-xs text-gray-400">Année 2024-2025</p></div></div>
-                    <div className="flex items-end justify-between h-48 w-full gap-4 px-2">
-                        {[40, 65, 45, 80, 55, 90, 70, 85, 60, 75, 95, 65].map((h, i) => (
-                            <div key={i} className="w-full bg-gray-50 rounded-t-lg relative group h-full flex items-end"><div style={{ height: `${h}%` }} className="w-full bg-[#27b6d8] rounded-t-lg opacity-80 group-hover:opacity-100 transition-all duration-500 relative"></div></div>
-                        ))}
-                    </div>
-                </div>
-                <div className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm relative overflow-hidden">
-                    <div className="flex justify-between items-center mb-6 relative z-10"><h3 className="font-bold text-slate-900">Activité Financière</h3><button onClick={goToFinances} className="text-xs text-[#27b6d8] font-bold hover:underline">Voir tout</button></div>
-                    <div className="space-y-4 relative z-10">
-                        {transactions.filter(t => t.status === 'En attente').length === 0 ? <div className="text-center py-10 text-gray-400 text-sm">Aucune transaction en attente.</div> : transactions.filter(t => t.status === 'En attente').map(t => (
-                            <div key={t.id} onClick={goToFinances} className="p-4 bg-orange-50 hover:bg-orange-100 rounded-2xl border border-orange-100 cursor-pointer transition-colors group">
-                                <p className="text-sm font-bold text-slate-900">{t.studentName} a payé</p>
-                                <div className="flex justify-between items-center"><p className="text-xs text-gray-500">{t.formation}</p><span className="font-bold text-slate-900">{t.amount}</span></div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
 function FinancesTab({ transactions, onValidate }) {
     return (
         <div className="space-y-6 animate-fadeIn">
@@ -515,15 +482,27 @@ function FinancesTab({ transactions, onValidate }) {
     );
 }
 
-// --- NEW COMPONENT: CONFIRMATION DIALOG (HAUT DE GAMME) ---
+// --- UTILS ---
+const getRelativeTime = (dateStr) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+    if (diffDays === 0) return "Aujourd'hui";
+    if (diffDays === 1) return "Hier";
+    if (diffDays < 7) return `Il y a ${diffDays} jours`;
+    if (diffDays < 14) return "Il y a 1 semaine";
+    return "Il y a +2 semaines";
+};
+
+// --- DIALOGS & HELPERS ---
 function ConfirmationDialog({ title, message, onConfirm, onCancel }) {
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
             <div className="bg-white rounded-[2rem] w-full max-w-sm p-8 shadow-2xl animate-scaleIn text-center relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-red-100 rounded-full blur-[60px] opacity-50 -mr-10 -mt-10 pointer-events-none"></div>
-                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <AlertTriangle className="w-8 h-8" />
-                </div>
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6"><AlertTriangle className="w-8 h-8" /></div>
                 <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
                 <p className="text-gray-500 text-sm mb-8 leading-relaxed">{message}</p>
                 <div className="flex gap-3">
