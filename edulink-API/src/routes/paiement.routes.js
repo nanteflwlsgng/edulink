@@ -328,4 +328,10 @@ router.get('/tranches/retard', paiementController.getTranchesEnRetard);
  *         formation:
  *           $ref: '#/components/schemas/Formation'
  */
+// routes/paiement.routes.js
+
+// Ajoutez cette ligne (par exemple avant les routes avec :id)
+router.get('/ecoles/finances', paiementController.getFinances);
+// Nouvelle route pour l'action du bouton "Confirmer"
+router.put('/:idPaiement/valider', paiementController.validerTransactionEcole);
 export default router;

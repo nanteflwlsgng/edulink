@@ -4,6 +4,33 @@ const formationService = new FormationService();
 
 export class FormationController {
   // Récupérer toutes les formations
+   async creerFormation(req, res) {
+    try {
+      // req.user est rempli par le middleware 'authenticate'
+      const id_utilisateur = req.user.id_utilisateur;
+      
+      console.log("Données reçues:", req.body); // Pour débugger dans le terminal
+      console.log("Fichier reçu:", req.file);
+
+      const formation = await formationService.creerFormation(
+        id_utilisateur, 
+        req.body, 
+        req.file
+      );
+      
+      res.status(201).json({
+        success: true,
+        message: "Formation créée avec succès",
+        data: formation
+      });
+    } catch (error) {
+      console.error("Erreur création formation:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: error.message 
+      });
+    }
+  }
   async listerFormations(req, res) {
     try {
       const formations = await formationService.listerFormations();
@@ -72,41 +99,55 @@ export class FormationController {
   }
 
   // Modifier une formation
-  async modifierFormation(req, res) {
-    try {
-      const { id_formation } = req.params;
-      const formationData = req.body;
+// Dans formation.controller.js
 
-      const result = await formationService.modifierFormation(parseInt(id_formation), formationData);
-      
-      res.json({
-        success: true,
-        data: result
-      });
+async modifierFormation(req, res) {
+    try {
+        // ✅ CORRECTION : Le nom doit correspondre à la route '/:id_formation'
+        const id_formation = req.params.id_formation; 
+        
+        const id_utilisateur = req.user.id_utilisateur;
+        const data = req.body;
+        const file = req.file;
+
+        console.log("🛠️ Modif - ID:", id_formation); // Ajoute ce log pour vérifier
+
+        // Vérification de sécurité avant d'appeler le service
+        if (!id_formation) {
+            return res.status(400).json({ success: false, message: "ID formation manquant" });
+        }
+
+        const resultat = await formationService.modifierFormation(
+            id_utilisateur, 
+            id_formation, // Maintenant c'est bien défini
+            data, 
+            file
+        );
+
+        res.json({ success: true, message: "Formation modifiée", data: resultat });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message
-      });
+        console.error("Erreur modif:", error);
+        res.status(400).json({ success: false, message: error.message });
     }
-  }
+}
 
   // Supprimer une formation
-  async supprimerFormation(req, res) {
+async supprimerFormation(req, res) {
     try {
-      const { id_formation } = req.params;
+      // Récupération des IDs
+      const id_formation = req.params.id_formation;
+      const id_utilisateur = req.user.id_utilisateur;
 
-      const result = await formationService.supprimerFormation(parseInt(id_formation));
+      console.log(`🗑️ Tentative suppression Form:${id_formation} par User:${id_utilisateur}`);
+
+      // Appel du service corrigé
+      const result = await formationService.supprimerFormation(id_utilisateur, id_formation);
       
-      res.json({
-        success: true,
-        data: result
-      });
+      res.json({ success: true, message: result.message });
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        message: error.message
-      });
+      console.error("Erreur suppression:", error);
+      // Renvoie l'erreur exacte au Frontend
+      res.status(400).json({ success: false, message: error.message });
     }
   }
 

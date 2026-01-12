@@ -126,10 +126,8 @@ function AuthForm({ type, onBack, theme }) {
       const res = await login(formData.email, formData.password);
       if (res.success) {
        // navigate("/dashboard");
-          console.log("Connexion réussie, redirection...");
-          const user = JSON.parse(localStorage.getItem("active_session"));
-            if (user && (user.role === "ECOLE" || user.role === "admin")) {
-            navigate("/dashboard"); // Mets ici ta route pour l'école
+        if (type === 'school') {
+            navigate("/schoolDashboard"); // Mets ici ta route pour l'école
         } else {
             navigate("/dashboard"); // Mets ici ta route pour l'étudiant
         }
@@ -163,9 +161,13 @@ function AuthForm({ type, onBack, theme }) {
           ville: formData.city,           // city devient ville
           role: type === 'school' ? 'ECOLE' : 'ETUDIANT' // On définit le rôle
       };
-      const res = await register(dataToSend);
+      const res = await register(dataToSend , type);
       if (res.success) {
-        navigate("/dashboard");
+        if (type === 'school') {
+            navigate("/schoolDashboard");
+        } else {
+            navigate("/dashboard");
+        }
       } else {
         setError(res.message);
         shakeForm();

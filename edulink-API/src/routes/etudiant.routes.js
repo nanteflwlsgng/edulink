@@ -16,7 +16,7 @@ import {
   // Avis
   laisserAvis,
   // Notifications
-  getNotificationsEtudiant
+  getNotificationsEtudiant,telechargerCarte 
 } from "../controllers/etudiant.controller.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isEtudiant } from "../middlewares/isEtudiant.js";
@@ -302,5 +302,6 @@ router.post("/ecoles/:id_ecole/avis", laisserAvis);
  *         description: Notifications récupérées
  */
 router.get("/notifications", getNotificationsEtudiant);
+router.get('/:id_inscription/carte', telechargerCarte);
 
-export default router;
+export default router; 

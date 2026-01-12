@@ -19,6 +19,53 @@ export const getProfilEcole = async (req, res) => {
   }
 };
 
+// ... tes imports ...
+
+// 🔹 GESTION DES CANDIDATURES (Réservé aux écoles ACTIVES)
+export const getCandidatures = async (req, res) => {
+  try {
+    const id_utilisateur = req.user.id_utilisateur;
+    
+    const candidatures = await ecoleService.getCandidatures(id_utilisateur);
+    
+    res.json({ 
+      success: true, 
+      data: candidatures 
+    });
+  } catch (error) {
+    if (error.message.includes("non validée")) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const updateStatutCandidature = async (req, res) => {
+  try {
+    const id_utilisateur = req.user.id_utilisateur;
+    const { id } = req.params; // id de l'inscription
+    const { decision } = req.body; // 'Admis', 'Refusé', 'Vu'
+    
+    const result = await ecoleService.updateStatutCandidature(
+      id_utilisateur, 
+      parseInt(id), 
+      decision
+    );
+    
+    res.json({ 
+      success: true, 
+      message: `Statut mis à jour : ${decision}`, 
+      data: result 
+    });
+  } catch (error) {
+    if (error.message.includes("non validée") || error.message.includes("non autorisée")) {
+      return res.status(403).json({ success: false, message: error.message });
+    }
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ... le reste de tes controlleurs (getProfilEcole, etc.) ...
 export const creerProfilEcole = async (req, res) => {
   try {
     const id_utilisateur = req.user.id_utilisateur;

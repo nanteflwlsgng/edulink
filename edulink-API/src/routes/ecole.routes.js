@@ -1,11 +1,14 @@
 import express from "express";
 import {  creerProfilEcole, getProfilEcole,modifierProfilEcole,  supprimerProfilEcole,ajouterFormation,getFormationsEcole,modifierFormation,  supprimerFormation,getEtudiantsInscrits,envoyerNotificationEtudiant,
-  
+  getCandidatures, 
+  updateStatutCandidature ,
   getStatistiquesEcole,
   genererRapportFinancier,
   exporterListeEtudiants,
   // Notifications
   getNotifications
+  
+
 } from "../controllers/ecole.controller.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isEcole } from "../middlewares/isEcole.js";
@@ -23,6 +26,8 @@ const router = express.Router();
 router.use(authenticate);
 router.use(isEcole);
 
+router.get("/candidatures", getCandidatures);
+router.patch("/candidatures/:id/status", updateStatutCandidature);
 // 🔹 PROFIL ECOLE (Accessible à toutes les écoles)
 
 /**
@@ -279,7 +284,7 @@ router.delete("/formations/:id", supprimerFormation);
  *       403:
  *         description: École non validée
  */
-router.get("/etudiants", getEtudiantsInscrits);
+
 
 /**
  * @swagger
@@ -387,5 +392,6 @@ router.get("/export/etudiants", exporterListeEtudiants);
  *         description: Notifications récupérées
  */
 router.get("/notifications", getNotifications);
+router.get('/etudiants-inscrits', getEtudiantsInscrits);
 
 export default router;

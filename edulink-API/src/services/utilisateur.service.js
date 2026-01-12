@@ -62,7 +62,7 @@ const register = async (data) => {
     ecole: data.role === 'ECOLE' ? {
       create: {
         telephone: data.telephone,
-        ville: data.ville, // ou adresse
+        adresse: data.adresse || data.ville, // ou adresse
         nom: data.nom // Souvent le nom de l'école
       }
     } : undefined

@@ -1,5 +1,6 @@
 import prisma from "../config/prismaClient.js";
 import { generateCarteEtudiantQR } from '../utils/qrcode.js';
+import { CardGenerator } from '../utils/paiementUtils.js'; 
 export const etudiantService = {
   // 🔹 PROFIL ÉTUDIANT
   async getProfilEtudiant(id_utilisateur) {
@@ -426,5 +427,38 @@ export const etudiantService = {
       notifications,
       total: notifications.length
     };
+  },
+
+async genererCartePDF(id_inscription) {
+    // 1. Récupérer les infos complètes de l'étudiant
+    const inscription = await prisma.inscription.findUnique({
+      where: { id_inscription: id_inscription },
+      include: {
+        etudiant: {
+          include: {
+            utilisateur: true // Pour le Nom, Prénom, Photo
+          }
+        },
+        formation: {
+          include: {
+            ecole: true // Pour le nom de l'école
+          }
+        }
+      }
+    });
+
+    // 2. Vérifications de sécurité
+    if (!inscription) {
+      throw new Error("Inscription introuvable.");
+    }
+
+    if (inscription.statut !== 'INSCRIT') {
+      throw new Error("L'étudiant n'est pas encore inscrit définitivement. Paiement ou validation manquant.");
+    }
+
+    // 3. Génération du PDF via l'utilitaire
+    const buffer = await CardGenerator.genererCarte(inscription);
+    
+    return buffer;
   }
 };

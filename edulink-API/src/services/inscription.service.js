@@ -401,9 +401,11 @@ async genererRecuPDFDirect(id_inscription) {
             select: {
               titre: true,
               description: true, // Si besoin
+              prix: true,
               ecole: {
                 select: {
-                  nom: true
+                  nom: true,
+                  logo: true
                 }
               }
             }

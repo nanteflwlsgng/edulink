@@ -25,6 +25,7 @@ model Utilisateur {
 model Etudiant {
   id_etudiant    Int             @id @default(autoincrement())
   date_naissance DateTime?
+  cin               String?
   adresse        String?         @db.VarChar(100)
   telephone      String?         @db.VarChar(20)
   sexe           String?   @db.Char(1) // "M" ou "F"
@@ -68,22 +69,28 @@ model Formation {
   id_formation  Int             @id @default(autoincrement())
   titre         String          @db.VarChar(150) 
   description   String?         @db.VarChar(500)
+
   prix          Decimal?
   nbr_max_etudiant Int? 
+  image_url       String?         @db.VarChar(255) 
+  
   date_creation DateTime        @default(now())
   date_modification DateTime? 
 
   categorie    CategorieFormation  @default(INFORMATIQUE)
   niveau       NiveauFormation    @default(LICENCE)
-  
   mode          ModeFormation      @default(PRESENTIEL)
   continent    Continent?         @default(AFRIQUE)
   ville        String?            // Ex: "Dakar"
   duree        DureeStandard      @default(ANS_3)
   langue        String          @default("Français") @db.VarChar(50)
+
   type_admission String         @default("Dossier") @db.VarChar(100)
+  conditions     Json? 
+
   id_ecole      Int
   statut        FormationStatut @default(ACTIF)
+
   evaluations   Evaluation[]
   ecole         Ecole           @relation(fields: [id_ecole], references: [id_ecole], onDelete: Cascade)
   inscriptions  Inscription[]
@@ -95,6 +102,7 @@ model Session {
   id_session   Int       @id @default(autoincrement())
   date_debut   DateTime
   date_fin     DateTime
+  statut       String    @default("OUVERTE") 
   id_formation Int
   formation    Formation @relation(fields: [id_formation], references: [id_formation])
   createdAt     DateTime  @default(now())
@@ -116,7 +124,7 @@ model Inscription {
   url_lettre          String?  @db.VarChar(255)
   url_releve_notes    String?  @db.VarChar(255)
   url_piece_identite  String?  @db.VarChar(255)
-
+   matricule         String? 
   id_etudiant      Int
   id_formation     Int
   etudiant         Etudiant          @relation(fields: [id_etudiant], references: [id_etudiant])
@@ -164,6 +172,7 @@ model Paiement {
   montant_total    Decimal
   statut           StatutPaiement    @default(EN_ATTENTE)
   date_paiement    DateTime?
+  details_paiement Json?             @db.Json 
   id_inscription   Int?
   inscription      Inscription?      @relation(fields: [id_inscription], references: [id_inscription])
   tranches         TranchePaiement[]
@@ -248,6 +257,8 @@ enum StatutInscription {
   EN_ATTENTE
   VALIDEE
   ANNULEE
+  VU
+  INSCRIT
 }
 
 enum StatutPaiement {
@@ -256,6 +267,7 @@ enum StatutPaiement {
   ECHEC
   ANNULE
   REMBOURSE
+  VALIDEE 
 }
 
 enum TypePaiement {

@@ -1,5 +1,4 @@
-// utils/paiementUtils.js
-
+import { generatePDFBuffer } from './pdf.js';
 // Service Stripe (carte bancaire)
 export class StripeService {
   static async processPaiementCarte(montant, tokenPaiement, description, currency = 'eur') {
@@ -18,7 +17,7 @@ export class StripeService {
           date: new Date().toISOString(),
           receipt_url: `https://stripe.com/receipts/${Date.now()}`
         });
-      }, 1000);
+      }, 5000);
     });
   }
 }
@@ -40,7 +39,7 @@ export class PayPalService {
           orderId,
           date: new Date().toISOString()
         });
-      }, 1500);
+      }, 5000);
     });
   }
 }
@@ -62,7 +61,7 @@ export class MobileMoneyService {
           description,
           date: new Date().toISOString()
         });
-      }, 2000);
+      }, 5000);
     });
   }
 }
@@ -120,24 +119,126 @@ export class TrancheManager {
 }
 
 // Générateur de reçu
+
 export class ReceiptGenerator {
-  static async genererRecu(paiementData) {
-    console.log('Generating receipt for payment:', paiementData.id_paiement);
+  
+  static async genererRecu(paiement) {
+    console.log('Génération du reçu pour le paiement:', paiement.id_paiement);
     
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const recu = {
-          idRecu: `recu_${Date.now()}`,
-          dateGeneration: new Date().toISOString(),
-          data: paiementData,
-          pdfUrl: `/recus/recu_${paiementData.id_paiement}.pdf`,
-          qrCode: `data:image/png;base64,simulated_qr_code_${Date.now()}`,
-          montant: paiementData.montant_total,
-          modePaiement: paiementData.mode_paiement,
-          raison: paiementData.raison_paiement
-        };
-        resolve(recu);
-      }, 500);
+    // --- A. PRÉPARATION DES DONNÉES ---
+    
+    // 1. Formatage Date et Montant
+    const dateStr = new Date(paiement.date_paiement).toLocaleDateString('fr-FR', {
+        day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit'
     });
+    const montantStr = parseFloat(paiement.montant_total).toLocaleString('fr-FR') + ' Ar';
+
+    // 2. Extraction intelligente des détails JSON
+    const details = paiement.details_paiement || {};
+    let infoMoyenPaiement = "";
+
+    if (paiement.methode_paiement === 'MOBILE_MONEY') {
+        // Ex: "MVOLA (034 12 345 67)"
+        infoMoyenPaiement = `${details.operateur || 'Mobile'} (${details.telephone || 'Non spécifié'})`;
+    } else if (paiement.methode_paiement === 'CARTE') {
+        // Ex: "Carte Bancaire - JEAN DUPONT (**** 4242)"
+        infoMoyenPaiement = `Carte - ${details.nom_porteur || ''} (**** ${details.dernier_chiffres || '****'})`;
+    } else {
+        infoMoyenPaiement = paiement.methode_paiement;
+    }
+
+    // 3. Infos Étudiant et École (Sécurité avec le "?." au cas où)
+    const etudiantNom = `${paiement.inscription?.etudiant?.utilisateur?.nom || ''} ${paiement.inscription?.etudiant?.utilisateur?.prenom || ''}`.trim();
+    const ecoleNom = paiement.inscription?.formation?.ecole?.nom || 'EduLink School';
+    const formationTitre = paiement.inscription?.formation?.titre || 'Formation';
+
+    // --- B. CONSTRUCTION DU TEXTE (Format compatible avec votre pdf.js) ---
+    // Votre pdf.js détecte les ":" pour mettre en gras le label
+    
+    const content = `
+==================
+DÉTAILS DE LA TRANSACTION
+==================
+Référence Transaction: ${details.idTransaction || `TX-${paiement.id_paiement}`}
+Date de validation: ${dateStr}
+Statut: ${paiement.statut}
+
+INFORMATION DE PAIEMENT
+Montant réglé: ${montantStr}
+Mode: ${paiement.mode_paiement}
+Méthode: ${paiement.methode_paiement}
+Détail du moyen: ${infoMoyenPaiement}
+
+BÉNÉFICIAIRE (ÉCOLE)
+Établissement: ${ecoleNom}
+Formation: ${formationTitre}
+Motif: ${paiement.raison_paiement}
+
+PAYEUR (ÉTUDIANT)
+Nom et Prénom: ${etudiantNom}
+Email: ${paiement.inscription?.etudiant?.utilisateur?.email || 'Non renseigné'}
+    `;
+
+    // --- C. GÉNÉRATION DU BUFFER ---
+    
+    try {
+        // Appel de votre fonction existante dans pdf.js
+        const pdfBuffer = await generatePDFBuffer(content);
+
+        // Retour au format attendu par le controller
+        return {
+            buffer: pdfBuffer,
+            filename: `Recu_Paiement_${paiement.id_paiement}.pdf`,
+            contentType: 'application/pdf'
+        };
+    } catch (error) {
+        console.error("Erreur génération PDF:", error);
+        throw new Error("Impossible de générer le fichier PDF");
+    }
+  }
+}
+export class CardGenerator {
+  static async genererCarte(inscription) {
+    const etudiant = inscription.etudiant.utilisateur;
+    const formation = inscription.formation;
+    const ecole = formation.ecole;
+    const matricule = inscription.matricule || "EN COURS";
+    
+    // Année universitaire (logique simple)
+    const year = new Date().getFullYear();
+    const anneeUniv = `${year}-${year + 1}`;
+
+    // Construction du contenu TEXTE (Simplifié pour votre générateur actuel)
+    // Si vous voulez un design graphique complexe avec image, il faudrait utiliser pdfkit directement ici.
+    // Mais pour rester cohérent avec votre méthode "generatePDFBuffer" qui prend du texte :
+    
+    const content = `
+*****************************************
+        CARTE D'ÉTUDIANT ${anneeUniv}
+*****************************************
+
+ÉTABLISSEMENT
+Nom : ${ecole.nom}
+Adresse : ${ecole.adresse || 'Antananarivo, Madagascar'}
+
+ÉTUDIANT(E)
+Matricule : ${matricule}
+Nom : ${etudiant.nom.toUpperCase()}
+Prénom : ${etudiant.prenom}
+Email : ${etudiant.email}
+
+FORMATION
+Cursus : ${formation.titre}
+Niveau : ${formation.niveau}
+
+-----------------------------------------
+Valide jusqu'au : 30 Juin ${year + 1}
+Ce document certifie l'inscription régulière 
+de l'étudiant pour l'année en cours.
+-----------------------------------------
+    `;
+
+    // Appel à votre fonction existante qui transforme le texte en PDF
+    return await generatePDFBuffer(content);
   }
 }

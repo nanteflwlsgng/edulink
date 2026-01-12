@@ -1,12 +1,38 @@
 import express from 'express';
 import { FormationController } from '../controllers/formation.controller.js';
-
+import { authenticate } from "../middlewares/auth.js";
+import { upload } from "../middlewares/upload.js";
+import { isEcole } from "../middlewares/isEcole.js";
 const router = express.Router();
 const formationController = new FormationController();
 
 router.get("/", (req, res) => formationController.listerFormations(req, res));
 router.get('/:id_formation', (req, res) =>  formationController.getFormationById(req, res));
- 
+ /**
+ * @swagger
+ * /api/formations/{id_formation}:
+ *   delete:
+ *     summary: Supprimer une formation
+ *     tags: [Formations]
+ *     parameters:
+ *       - in: path
+ *         name: id_formation
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la formation
+ *     responses:
+ *       200:
+ *         description: Formation supprimée avec succès
+ *       400:
+ *         description: Erreur lors de la suppression
+ */
+router.delete('/:id_formation', authenticate, isEcole, formationController.supprimerFormation);
+router.put('/:id_formation', 
+  authenticate, 
+  isEcole, 
+  upload.single('image'), // <--- TRES IMPORTANT : Pour lire le FormData
+(req, res) => formationController.modifierFormation(req, res));
 /**
  * @swagger
  * tags:
@@ -54,6 +80,8 @@ router.get('/:id_formation', (req, res) =>  formationController.getFormationById
  *         description: Erreur lors de l'ajout de la session
  */
 router.post('/:id_formation/sessions', formationController.ajouterSession);
+router.post("/", authenticate,  isEcole,  upload.single('image'), (req, res) => formationController.creerFormation(req, res));
+
 
 /**
  * @swagger
@@ -92,28 +120,8 @@ router.post('/:id_formation/sessions', formationController.ajouterSession);
  *       400:
  *         description: Erreur lors de la modification
  */
-router.put('/:id_formation', formationController.modifierFormation);
+// router.put('/:id_formation', formationController.modifierFormation);
 
-/**
- * @swagger
- * /api/formations/{id_formation}:
- *   delete:
- *     summary: Supprimer une formation
- *     tags: [Formations]
- *     parameters:
- *       - in: path
- *         name: id_formation
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la formation
- *     responses:
- *       200:
- *         description: Formation supprimée avec succès
- *       400:
- *         description: Erreur lors de la suppression
- */
-router.delete('/:id_formation', formationController.supprimerFormation);
 
 /**
  * @swagger

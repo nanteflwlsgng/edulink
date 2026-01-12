@@ -33,11 +33,12 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // 2. Fonction de Connexion
-  const login = async (email, mot_de_passe) => {
+  const login = async (email, mot_de_passe,type) => {
     try {
+      const roleAttendu = type === 'student' ? 'ETUDIANT' : 'ECOLE';
       // Attention: vérifie si ton backend attend "password" ou "motDePasse"
       // Si ton backend attend "motDePasse", change la ligne ci-dessous :
-      const response = await api.post("/utilisateurs/login", { email,  mot_de_passe });
+      const response = await api.post("/utilisateurs/login", { email,  mot_de_passe ,  role: roleAttendu});
       
       // On suppose que le backend renvoie { token: "...", utilisateur: {...} }
       // Si ton backend renvoie "user" au lieu de "utilisateur", change le nom ici
@@ -59,10 +60,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // 3. Fonction d'Inscription
-  const register = async (userData) => {
+  const register = async (userData, roleType) => {
     try {
       // CORRECTION ICI : La route est /register selon ton fichier de routes
-      const response = await api.post("/utilisateurs/register", userData);
+      const dataToBackend = {
+      ...userData,
+      role: roleType === 'student' ? 'ETUDIANT' : 'ECOLE'
+    };
+     const response = await api.post("/utilisateurs/register", dataToBackend);
       
       const { token, utilisateur } = response.data;
 

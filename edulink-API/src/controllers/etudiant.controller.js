@@ -221,11 +221,46 @@ export const laisserAvis = async (req, res) => {
 // 🔹 NOTIFICATIONS
 export const getNotificationsEtudiant = async (req, res) => {
   try {
-    const id_utilisateur = req.user.id_utilisateur;
-    const notifications = await etudiantService.getNotificationsEtudiant(id_utilisateur);
+    // Sécurité : parfois le middleware met 'id' et parfois 'id_utilisateur'
+    const id_utilisateur = req.user.id_utilisateur || req.user.id;
+
+    if (!id_utilisateur) {
+        return res.status(401).json({ success: false, message: "Utilisateur non identifié" });
+    }
+
+    const result = await etudiantService.getNotificationsEtudiant(id_utilisateur);
     
-    res.json({ success: true, data: notifications });
+    // Le frontend recevra : response.data.data.notifications
+    res.json({ 
+        success: true, 
+        data: result 
+    });
+
   } catch (error) {
+    console.error("Erreur notification controller:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
+export const telechargerCarte = async (req, res)=> {
+    try {
+      const {id_inscription } = req.params;
+
+      // 1. Appel au service pour générer le binaire (buffer) du PDF
+      const pdfBuffer = await etudiantService.genererCartePDF(parseInt(id_inscription));
+
+      // 2. Configuration des en-têtes pour le téléchargement
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Carte_Etudiant_${id_inscription}.pdf"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+
+      // 3. Envoi du fichier
+      res.send(pdfBuffer);
+
+    } catch (error) {
+      console.error("Erreur carte:", error);
+      res.status(404).json({ 
+        success: false, 
+        message: error.message || "Impossible de générer la carte." 
+      });
+    }
+  }
