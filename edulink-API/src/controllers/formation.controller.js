@@ -31,6 +31,21 @@ export class FormationController {
       });
     }
   }
+
+    // ✅ Nouvelle méthode
+    async listerMesFormations(req, res) {
+      try {
+        // req.user est fourni par le middleware authenticate
+        const id_utilisateur = req.user.id_utilisateur;
+        
+        const formations = await formationService.listerFormationsParEcole(id_utilisateur);
+        
+        res.json({ success: true, data: formations });
+      } catch (error) {
+        console.error("Erreur récupération mes formations:", error);
+        res.status(500).json({ success: false, message: error.message });
+      }
+    }
   // ✅ LECTURE
   async listerFormations(req, res) {
     try {
@@ -59,6 +74,18 @@ export class FormationController {
       });
     }
   }
+
+  // formation.controller.js
+async getOneFormation(req, res) {
+  try {
+    const { id } = req.params;
+    const formation = await formationService.getFormationById(parseInt(id));
+    if(!formation) return res.status(404).json({success: false, message: "Non trouvé"});
+    res.json({ success: true, data: formation });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+}
 
   // Modifier une formation
   async modifierFormation(req, res) {

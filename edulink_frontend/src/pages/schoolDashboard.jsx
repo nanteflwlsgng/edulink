@@ -3,7 +3,7 @@ import {
   LayoutDashboard, BookOpen, Users, CreditCard, Settings, LogOut, 
   Plus, Trash2, Eye, CheckCircle2, FileText, 
   Building2, Globe, Mail, Phone, Download, 
-  DollarSign, Search, Calendar, Filter, ArrowUpRight, BadgeCheck, Bell, Clock, AlertTriangle, X, Sparkles, LayoutList, LayoutGrid
+  DollarSign, Search, Map, Filter, ArrowUpRight, BadgeCheck, Bell, Clock, AlertTriangle, SaveIcon , Sparkles, LayoutList, LayoutGrid,Camera, Image as ImageIcon,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -55,15 +55,17 @@ export default function SchoolDashboard() {
     });
   };
 
-  // --- CHARGEMENT DES DONNÉES (Backend) ---
-  const fetchFormations = async () => {
+const fetchFormations = async () => {
     try {
-      const res = await api.get('/formations');
+      // ✅ APRÈS (Récupère uniquement celles de l'école connectée)
+      const res = await api.get('/formations/mine');
+      
       if (res.data.success) {
         setFormations(res.data.data);
       }
     } catch (error) {
       console.error("Erreur chargement formations:", error);
+      showToast("error", "Impossible de charger vos formations");
     }
   };
 
@@ -206,7 +208,7 @@ export default function SchoolDashboard() {
       case "candidatures": return <CandidaturesTab candidats={candidats} onOpen={openCandidature} onOpenIA={() => setIsIAModalOpen(true)} />;
       case "finances": return <FinancesTab transactions={transactions} onValidate={handleValidateTransaction} />;
       case "students": return <StudentCardsTab candidats={candidats} />;
-      case "settings": return <div className="p-10 text-gray-400">Paramètres (À venir)</div>;
+      case "settings": return <SettingsTab user={user} />;
       default: return <OverviewTab stats={stats} />;
     }
   };
@@ -530,6 +532,231 @@ function StudentCardsTab({ candidats }) {
         </div>
     );
 }
+
+// --- SETTINGS TAB ---
+function SettingsTab({ user }) {
+    const [isLoading, setIsLoading] = useState(false);
+    const [formData, setFormData] = useState({
+        nom_etablissement:"", adresse: "", telephone: "", site_web: "", description: "",
+        devis: "", nom_directeur: "", date_fondation: "",
+        logo: null, logoPreview: "",
+        photo_directeur: null, photoDirecteurPreview: "",
+        photo_etablissement: null, photoEtablissementPreview: ""
+    });
+
+    // Charger les données existantes
+    useEffect(() => {
+        const fetchProfil = async () => {
+            try {
+                const res = await api.get('/ecoles/profil');
+                if (res.data.success && res.data.data) {
+                    const data = res.data.data;
+                    setFormData({
+                        nom_etablissement: data.nom_etablissement || "",
+                        adresse: data.adresse || "",
+                        telephone: data.telephone || "",
+                        site_web: data.site_web || "",
+                        description: data.description || "",
+                        devis: data.devis || "",
+                        nom_directeur: data.nom_directeur || "",
+                        date_fondation: data.date_fondation ? data.date_fondation.split('T')[0] : "",
+                        logoPreview: data.logo ? `${API_BASE_URL}/${data.logo}` : "",
+                        photoDirecteurPreview: data.photo_directeur ? `${API_BASE_URL}/${data.photo_directeur}` : "",
+                        photoEtablissementPreview: data.photo_etablissement ? `${API_BASE_URL}/${data.photo_etablissement}` : "",
+                    });
+                }
+            } catch (error) {
+                console.error("Erreur chargement profil", error);
+            }
+        };
+        fetchProfil();
+    }, []);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleFileChange = (e, field) => {
+        const file = e.target.files[0];
+        if (file) {
+            // Logique pour déterminer quelle preview mettre à jour
+            let previewKey = 'logoPreview';
+            if (field === 'photo_directeur') previewKey = 'photoDirecteurPreview';
+            if (field === 'photo_etablissement') previewKey = 'photoEtablissementPreview';
+
+            setFormData({
+                ...formData,
+                [field]: file,
+                [previewKey]: URL.createObjectURL(file)
+            });
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        const data = new FormData();
+        
+        // Ajout des champs textes
+        Object.keys(formData).forEach(key => {
+            if (!['logo', 'photo_directeur','photo_etablissement', 'logoPreview', 'photoDirecteurPreview','photoEtablissementPreview'].includes(key)) {
+                data.append(key, formData[key]);
+            }
+        });
+
+        // Ajout des fichiers seulement si modifiés (instance of File)
+        if (formData.logo instanceof File) data.append('logo', formData.logo);
+        if (formData.photo_directeur instanceof File) data.append('photo_directeur', formData.photo_directeur);
+        if (formData.photo_etablissement instanceof File) data.append('photo_etablissement', formData.photo_etablissement);
+        try {
+            await api.put('/ecoles/profil', data);
+            // Afficher une notification (Toast) ici si vous avez accès à la fonction showToast via props
+            alert("Profil mis à jour avec succès !"); 
+        } catch (error) {
+            console.error("Erreur mise à jour", error);
+            alert("Erreur lors de la mise à jour.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto space-y-8 animate-fadeIn pb-10">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h3 className="text-2xl font-bold text-slate-900">Profil de l'établissement</h3>
+                    <p className="text-sm text-gray-500">Gérez les informations visibles par les étudiants.</p>
+                </div>
+                <button 
+                    onClick={handleSubmit} 
+                    disabled={isLoading}
+                    className="bg-[#370669] text-white px-6 py-3 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-[#2b0554] shadow-lg shadow-[#370669]/20 disabled:opacity-70 transition-all"
+                >
+                    {isLoading ? "Enregistrement..." : <><SaveIcon className="w-4 h-4" /> Enregistrer</>}
+                </button>
+            </div>
+
+            <form className="space-y-8">
+                {/* 1. IDENTITÉ VISUELLE */}
+                <div className="bg-white p-2 rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden group relative">
+                    <div className="h-48 md:h-64 bg-gray-100 rounded-[1.5rem] relative overflow-hidden">
+                        {formData.photoEtablissementPreview ? (
+                            <img src={formData.photoEtablissementPreview} alt="Couverture" className="w-full h-full object-cover" />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
+                                <ImageIcon className="w-12 h-12 mb-2" />
+                                <span className="text-sm font-bold uppercase">Photo de l'établissement (Couverture)</span>
+                            </div>
+                        )}
+                        
+                        {/* Overlay au survol */}
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <label className="bg-white/90 text-slate-800 px-4 py-2 rounded-xl font-bold text-sm cursor-pointer flex items-center gap-2 hover:bg-white shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all">
+                                <Camera className="w-4 h-4" /> Changer la couverture
+                                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'photo_etablissement')} className="hidden" />
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Logo Upload */}
+                    <div className="flex flex-col items-center justify-center space-y-4">
+                        <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Logo de l'école</label>
+                        <div className="relative group w-40 h-40">
+                            <div className="w-40 h-40 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gray-100 flex items-center justify-center relative">
+                                {formData.logoPreview ? (
+                                    <img src={formData.logoPreview} alt="Logo" className="w-full h-full object-cover" />
+                                ) : (
+                                    <Building2 className="w-16 h-16 text-gray-300" />
+                                )}
+                            </div>
+                            <label className="absolute bottom-0 right-0 bg-[#27b6d8] p-3 rounded-full text-white cursor-pointer hover:bg-[#1fa0bc] transition-colors shadow-lg">
+                                <Camera className="w-5 h-5" />
+                                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'logo')} className="hidden" />
+                            </label>
+                        </div>
+                    </div>
+
+                    {/* Directeur Upload */}
+                    <div className="flex flex-col items-center justify-center space-y-4 border-l border-gray-100 pl-8">
+                        <label className="text-sm font-bold text-gray-700 uppercase tracking-wider">Photo du Directeur</label>
+                        <div className="relative group w-32 h-32">
+                            <div className="w-32 h-32 rounded-2xl border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50 flex items-center justify-center relative">
+                                {formData.photoDirecteurPreview ? (
+                                    <img src={formData.photoDirecteurPreview} alt="Directeur" className="w-full h-full object-cover" />
+                                ) : (
+                                    <Users className="w-10 h-10 text-gray-300" />
+                                )}
+                            </div>
+                            <label className="absolute -bottom-3 -right-3 bg-white border border-gray-200 p-2 rounded-full text-gray-600 cursor-pointer hover:text-[#370669] transition-colors shadow-sm">
+                                <Camera className="w-4 h-4" />
+                                <input type="file" accept="image/*" onChange={(e) => handleFileChange(e, 'photo_directeur')} className="hidden" />
+                            </label>
+                        </div>
+                        <input 
+                            type="text" 
+                            name="nom_directeur"
+                            value={formData.nom_directeur} 
+                            onChange={handleChange}
+                            placeholder="Nom du directeur" 
+                            className="text-center w-full bg-transparent border-b border-gray-200 focus:border-[#370669] outline-none text-sm font-bold pb-1"
+                        />
+                    </div>
+                </div>
+
+                {/* 2. INFORMATIONS GÉNÉRALES */}
+                <div className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-sm space-y-6">
+                    <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Building2 className="w-5 h-5 text-[#370669]" /> Informations Générales
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <InputGroup label="Nom de l'établissement" name="nom_etablissement" value={formData.nom_etablissement} onChange={handleChange} placeholder="Ex: Université Antananarivo" full />
+                        <InputGroup label="Devise / Slogan" name="devis" value={formData.devis} onChange={handleChange} placeholder="Ex: Excellence et Innovation" />
+                        <InputGroup label="Date de fondation" name="date_fondation" type="date" value={formData.date_fondation} onChange={handleChange} />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                         <InputGroup label="Email contact" name="email" value={user?.email || ""} disabled={true} icon={Mail} />
+                         <InputGroup label="Téléphone" name="telephone" value={formData.telephone} onChange={handleChange} icon={Phone} placeholder="+261 34 00 000 00" />
+                         <InputGroup label="Site Web" name="site_web" value={formData.site_web} onChange={handleChange} icon={Globe} placeholder="www.ecole.mg" />
+                         <InputGroup label="Adresse" name="adresse" value={formData.adresse} onChange={handleChange} icon={Map} placeholder="Lot IV, Antananarivo" />
+                    </div>
+
+                    <div className="pt-4">
+                        <label className="text-xs font-bold text-gray-500 uppercase ml-1 mb-2 block">Description / Histoire</label>
+                        <textarea 
+                            name="description" 
+                            value={formData.description}
+                            onChange={handleChange}
+                            className="w-full p-4 rounded-xl border border-gray-200 focus:border-[#370669] focus:ring-1 focus:ring-[#370669]/20 outline-none text-sm min-h-[120px] resize-none bg-gray-50/50"
+                            placeholder="Présentez votre établissement en quelques lignes..."
+                        ></textarea>
+                    </div>
+                </div>
+            </form>
+        </div>
+    );
+}
+
+// Helper pour les inputs du formulaire Settings
+const InputGroup = ({ label, name, type = "text", value, onChange, placeholder, disabled, icon: Icon, full }) => (
+    <div className={`space-y-1.5 ${full ? 'md:col-span-2' : ''}`}>
+        <label className="text-xs font-bold text-gray-500 uppercase ml-1">{label}</label>
+        <div className="relative">
+            <input 
+                type={type} 
+                name={name}
+                value={value} 
+                onChange={onChange} 
+                disabled={disabled}
+                placeholder={placeholder}
+                className={`w-full px-4 py-3 rounded-xl border border-gray-200 outline-none text-sm text-slate-800 transition-all placeholder:text-gray-300 bg-white ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'focus:border-[#370669] focus:ring-1 focus:ring-[#370669]/20'}`} 
+            />
+            {Icon && <Icon className="absolute right-3 top-3 w-4 h-4 text-gray-400" />}
+        </div>
+    </div>
+);
 
 // --- FINANCES ---
 function FinancesTab({ transactions, onValidate }) {

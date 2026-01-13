@@ -16,7 +16,7 @@ import {  creerProfilEcole, getProfilEcole,modifierProfilEcole,  supprimerProfil
 } from "../controllers/ecole.controller.js";
 import { authenticate } from "../middlewares/auth.js";
 import { isEcole } from "../middlewares/isEcole.js";
-
+import { uploadEcoleFiles } from "../middlewares/upload.js";
 
 const router = express.Router();
 
@@ -134,6 +134,18 @@ router.get("/profil", getProfilEcole);
  */
 router.get("/profil", getProfilEcole);
 
+
+router.put("/profil", 
+  authenticate, 
+  isEcole, 
+  // On accepte deux champs fichiers : 'logo' et 'photo_directeur'
+  uploadEcoleFiles.fields([
+    { name: 'logo', maxCount: 1 }, 
+    { name: 'photo_directeur', maxCount: 1 },
+    { name: 'photo_etablissement', maxCount: 1 }
+  ]), 
+  modifierProfilEcole
+);
 
 /**
  * @swagger

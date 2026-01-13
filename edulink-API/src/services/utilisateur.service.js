@@ -53,7 +53,8 @@ const register = async (data) => {
       create: {
         adresse: data.ville, 
         telephone: data.telephone,
-        nom: data.nom 
+        nom: data.nom,
+        email: data.email
       }
     } : undefined,
 
