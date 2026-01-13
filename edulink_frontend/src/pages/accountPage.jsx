@@ -125,7 +125,7 @@ function AuthForm({ type, onBack, theme }) {
       }
       
       // AJOUT DE AWAIT ICI
-      const res = await login(formData.email, formData.password, type);
+      const res = await login(formData.email, formData.password);
       
       if (res.success) {
         if (type === 'school') {
