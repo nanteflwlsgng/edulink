@@ -81,27 +81,30 @@ export const ecoleService = {
   },
 
   // 🔹 MODIFICATION DU PROFIL
-  async modifierProfilEcole(id_utilisateur, data) {
+  async modifierProfilEcole(id_utilisateur, data, logoFile, directeurFile, etablissementFile) {
+    
+    const updateData = {
+      nom_etablissement: data.nom_etablissement,
+      adresse: data.adresse,
+      telephone: data.telephone,
+      description: data.description,
+      site_web: data.site_web,
+      devis: data.devis,
+      nom_directeur: data.nom_directeur,
+    };
+
+    if (data.date_fondation) updateData.date_fondation = new Date(data.date_fondation);
+    if (logoFile) updateData.logo = `uploads/ecoles/${logoFile.filename}`;
+    if (directeurFile) updateData.photo_directeur = `uploads/ecoles/${directeurFile.filename}`;
+
+    // ✅ GESTION DE LA PHOTO ETABLISSEMENT
+    if (etablissementFile) {
+      updateData.photo_etablissement = `uploads/ecoles/${etablissementFile.filename}`;
+    }
+
     return prisma.ecole.update({
       where: { id_utilisateur },
-      data: {
-        nom: data.nom,
-        adresse: data.adresse,
-        telephone: data.telephone,
-        description: data.description,
-        site_web: data.site_web,
-        logo: data.logo
-      },
-      include: {
-        utilisateur: {
-          select: {
-            email: true,
-            nom: true,
-            prenom: true,
-            statut: true
-          }
-        }
-      }
+      data: updateData
     });
   },
 
@@ -150,7 +153,10 @@ export const ecoleService = {
     if (utilisateur.statut === 'SUSPENDU' || utilisateur.statut === 'INACTIF') {
       throw new Error("Votre compte école n'est pas actif.");
     }
-    
+    if (ecole) {
+      // Petit trick pour le frontend : on renvoie "nom" pour que le formulaire se remplisse facilement
+      ecole.nom_etablissement = ecole.nom_etablissement;
+  }    
     return ecole;
   },
 

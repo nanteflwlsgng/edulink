@@ -51,15 +51,24 @@ model Ecole {
   date_creation   DateTime    @default(now())
   date_validation DateTime?
   description     String?     @db.VarChar(500)
+  nom_etablissement String?      @db.VarChar(100)
+  
+  // --- NOUVEAUX CHAMPS ---
   logo            String?     @db.VarChar(255)
   site_web        String?     @db.VarChar(100)
+  date_fondation  DateTime?   
+  nom_directeur   String?     @db.VarChar(100)
+  photo_directeur String?     @db.VarChar(255)
+  devis           String?     @db.VarChar(255) // Slogan
+  photo_etablissement String? @db.VarChar(255)
+  // -----------------------
+
   avis            Avis[]
   formations      Formation[]
   utilisateur     Utilisateur @relation(fields: [id_utilisateur], references: [id_utilisateur])
 
   @@map("ecoles")
 }
-
 model Admin {
   id_admin       Int         @id @default(autoincrement())
   id_utilisateur Int         @unique

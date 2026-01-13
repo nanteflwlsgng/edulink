@@ -37,13 +37,23 @@ export const creerProfilEcole = async (req, res) => {
 export const modifierProfilEcole = async (req, res) => {
   try {
     const id_utilisateur = req.user.id_utilisateur;
-    const profil = await ecoleService.modifierProfilEcole(id_utilisateur, req.body);
     
-    res.json({ 
-      success: true, 
-      message: "Profil modifié avec succès", 
-      data: profil 
-    });
+    const files = req.files || {};
+    const logoFile = files['logo'] ? files['logo'][0] : null;
+    const directeurFile = files['photo_directeur'] ? files['photo_directeur'][0] : null;
+    
+    // ✅ RECUPERATION DU FICHIER
+    const etablissementFile = files['photo_etablissement'] ? files['photo_etablissement'][0] : null;
+
+    const profil = await ecoleService.modifierProfilEcole(
+      id_utilisateur, 
+      req.body, 
+      logoFile, 
+      directeurFile,
+      etablissementFile // <--- On le passe au service
+    );
+    
+    res.json({ success: true, message: "Profil mis à jour", data: profil });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

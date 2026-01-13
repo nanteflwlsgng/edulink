@@ -68,6 +68,35 @@ export class FormationService {
       }
     });
   }
+
+    // ✅ Nouvelle méthode
+    async listerFormationsParEcole(id_utilisateur) {
+      // 1. Retrouver l'école via l'utilisateur connecté
+      const ecole = await prisma.ecole.findUnique({
+        where: { id_utilisateur }
+      });
+  
+      if (!ecole) {
+        throw new Error("Profil école introuvable.");
+      }
+  
+      // 2. Récupérer TOUTES les formations de cette école (Actives ET Inactives)
+      return await prisma.formation.findMany({
+        where: {
+          id_ecole: ecole.id_ecole
+        },
+        orderBy: {
+          date_creation: 'desc'
+        },
+        include: {
+          // Optionnel : compter les inscriptions pour l'affichage dashboard
+          _count: {
+              select: { inscriptions: true }
+          }
+        }
+      });
+    }
+
   async listerFormations() {
     try {
       return await prisma.formation.findMany({
@@ -80,7 +109,10 @@ export class FormationService {
         include: {
           ecole: {
             select: {
-              nom: true,
+              nom_etablissement: true, 
+              adresse: true,
+              logo: true, // Utile si vous voulez afficher le logo
+              photo_etablissement: true // Pour l'image de fond si besoin
               // Ajoute ici ville et pays si ton modèle Ecole les possède
               // ville: true, 
               // pays: true
@@ -92,6 +124,28 @@ export class FormationService {
       throw new Error(`Erreur lors de la récupération des formations: ${error.message}`);
     }
   }
+
+  // formation.service.js
+async getFormationById(id_formation) {
+  return prisma.formation.findUnique({
+      where: { id_formation },
+      include: {
+          ecole: {
+              select: {
+                  nom_etablissement: true,
+                  adresse: true,
+                  description: true,
+                  email: true,
+                  telephone: true,
+                  site_web: true,
+                  date_fondation: true,
+                  photo_etablissement: true,
+                  logo: true
+              }
+          }
+      }
+  });
+}
   // Créer une nouvelle session pour une formation
   async ajouterSession(id_formation, data) {
     try {

@@ -9,11 +9,13 @@ import { useAuth } from "../context/AuthContext"; // IMPORT AUTH
 import Footer from "../components/Footer";
 import api from "../services/api";
 
+const API_BASE_URL = "http://localhost:5000"; // ✅ AJOUTER CECI
+
 const STATIC_FILTERS = {
   category: ["Développement Web", "Marketing Digital", "Design", "Business", "Data Science", "Santé"],
   level: ["Licence", "Master", "Bachelor", "Certificat", "MBA"],
   country: ["France", "Maroc", "Canada", "Sénégal", "États-Unis", "En ligne"],
-  city: ["Paris", "Casablanca", "Dakar", "Montréal", "Lyon", "À distance"],
+  city: ["Antananarivo", "Fianarantsoa", "Toamasina", "En ligne", "À distance"],
   duration: ["Courte (1-3 mois)", "Moyenne (6-12 mois)", "Longue (+1 an)"]
 };
 
@@ -52,29 +54,27 @@ useEffect(() => {
              }
 
              return {
-                 ...item,
-                 id: item.id_formation,
-                 title: item.titre,
-                 description: item.description,
-                 
-                 // Gestion de l'école (Relation)
-                 school: item.ecole?.nom || "École partenaire",
-                 city: item.ecole?.ville || "À distance", // Doit matcher une valeur de STATIC_FILTERS.city si possible
-                 country: item.ecole?.pays || "En ligne", // Doit matcher une valeur de STATIC_FILTERS.country
-                 
-                 // --- MAPPING DES FILTRES ---
-                 // Si votre BDD n'a pas de colonne 'categorie', on met une valeur par défaut qui existe dans le filtre
-                 category: item.categorie || "Développement Web", 
-                 
-                 // Pareil pour le niveau
-                 level: item.niveau || "Débutant", 
-                 
-                 // On utilise le label calculé plus haut
-                 duration: durationLabel,
-                 
-                 // Image
-                 image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60"
-             };
+              ...item,
+              id: item.id_formation,
+              title: item.titre,
+              description: item.description,
+              
+              // ✅ Mapping École & Lieu
+              school: item.ecole?.nom_etablissement || "École partenaire",
+              // On utilise l'adresse de l'école comme ville, ou "En ligne" par défaut
+              city: item.ecole?.adresse || "En ligne", 
+              country: "Madagascar", // Valeur par défaut ou champ BDD si existant
+              
+              // ✅ Mapping Filtres (BDD -> Frontend)
+              category: item.categorie || "Général", 
+              level: item.niveau || "Non spécifié", 
+              
+              // ✅ C'est ici la clé pour l'image
+              // Si image_url existe en BDD, on colle l'URL du serveur devant. Sinon image par défaut.
+              image: item.image_url 
+                 ? `${API_BASE_URL}/${item.image_url}` 
+                 : "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&auto=format&fit=crop&q=60"
+          };
         });
 
         console.log("Données prêtes pour l'affichage:", formattedData);
@@ -94,15 +94,15 @@ const filteredData = useMemo(() => {
       // 1. NORMALISATION (Gérer les données manquantes et traduire les clés)
       // On utilise les champs du BACK (item.titre) pour remplir les variables
       const title = item.titre || "";
-      const schoolName = item.ecole?.nom || "École inconnue"; // Suppose que Prisma inclut l'école (include: { ecole: true })
+      const schoolName = item.school || ""; // Suppose que Prisma inclut l'école (include: { ecole: true })
       
       // Adaptation des champs pour les filtres
       // Note: Votre modèle Prisma n'a pas de champ 'categorie', 'niveau' ou 'ville' visible. 
       // Assurez-vous qu'ils existent ou utilisez des valeurs par défaut.
       const category = item.categorie || "Général"; 
       const level = item.niveau || "Non spécifié";
-      const country = item.ecole?.pays || "Monde";
-      const city = item.ecole?.ville || "En ligne";
+      const country = item.ecole?.pays || "Madagascar";
+      const city = item.city || "En ligne";
       const duration = item.duree ? String(item.duree) : "Non défini";
       
       // Image par défaut si pas d'image en BDD

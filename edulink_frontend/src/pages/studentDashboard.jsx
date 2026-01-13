@@ -10,34 +10,6 @@ import {
   X, Clock, CreditCard, Upload, GraduationCap, ArrowRight, XCircle, Download, CreditCard as CardIcon
 } from "lucide-react";
 
-// // --- DONNÉES SIMULÉES ---
-// const applicationsData = [
-//   { id: 1, school: "HETIC", program: "Mastère Big Data", status: "sent", date: "Il y a 2j", step: 1 },
-  
-//   // CAS 2 : Candidature vue (En attente)
-//   { id: 2, school: "ESG Luxe", program: "Bachelor Marketing", status: "viewed", date: "Il y a 1 sem", step: 2 },
-  
-//   // CAS 3 : DOSSIER TERMINÉ (Admis + Payé + Carte étudiante prête)
-//   { id: 3, school: "Sorbonne", program: "Licence Droit", status: "accepted", date: "Il y a 1 mois", price: "4 500 000 Ar", enrollmentComplete: true },
-  
-//   // CAS 4 : NOUVEAU CAS -> ADMISSIBLE (Admis MAIS paiement/docs en attente)
-//   { id: 5, school: "INSCAE", program: "Master Contrôle de Gestion", status: "accepted", date: "Hier", price: "8 200 000 Ar", enrollmentComplete: false },
-
-//   // CAS 5 : Refusé
-//   { id: 4, school: "Epitech", program: "Coding Academy", status: "rejected", date: "Il y a 3 jours"},
-// ];
-
-// const favoritesData = [
-//   { id: 101, title: "Ingénieur Logiciel", school: "Polytech" },
-//   { id: 102, title: "MBA Finance", school: "HEC Paris" },
-// ];
-
-// const notificationsData = [
-//   { id: 1, title: "Carte Étudiante disponible", message: "Votre carte pour Sorbonne Université est prête.", type: "success", date: "À l'instant", action: "download" },
-//   { id: 2, title: "Dossier HETIC", message: "Il manque votre relevé de notes.", type: "warning", date: "Il y a 2h" },
-//   { id: 3, title: "Félicitations !", message: "Vous êtes admissible à l'INSCAE. Finalisez votre inscription.", type: "success", date: "Hier" }
-// ];
-
 // --- COMPOSANT PRINCIPAL ---
 export default function StudentDashboard() {
   const { user } = useAuth();

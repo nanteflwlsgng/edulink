@@ -48,10 +48,12 @@ export default function Footer() {
           {/* COLONNE 1 : BRAND */}
           <div className="space-y-6">
             <Link to="/" className="flex items-center gap-2 text-2xl font-bold tracking-tighter">
-              <div className="w-8 h-8 rounded-lg bg-[#18B49C] flex items-center justify-center text-white">
-                <span className="font-serif italic">E</span>
+              <div className="w-16 h-16 rounded-full bg-[#18B49C] flex items-center justify-center text-white">
+        <img src="/icons8-éducation-64 1.png" alt="Logo" className="h-10 w-10" />
               </div>
-              Edu<span className="text-[#18B49C]">Platform</span>
+              <div className="flex items-center gap-2">
+        <span className="text-lg font-bold text-white">EduLink</span>
+      </div>
             </Link>
             <p className="text-white/60 text-sm leading-relaxed">
               La première plateforme d'orientation et d'inscription universitaire à Madagascar. Connectez votre avenir.
@@ -115,7 +117,7 @@ export default function Footer() {
 
         {/* --- PARTIE INFÉRIEURE : COPYRIGHT --- */}
         <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-white/40">
-          <p>© {new Date().getFullYear()} EduPlatform. Tous droits réservés.</p>
+          <p>© {new Date().getFullYear()} EduLink. Tous droits réservés.</p>
           
           <div className="flex gap-6 font-medium">
              <Link to="/privacy" className="hover:text-white transition-colors">Confidentialité</Link>

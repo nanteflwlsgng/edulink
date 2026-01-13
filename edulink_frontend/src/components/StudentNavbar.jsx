@@ -15,15 +15,16 @@ export default function StudentNavbar() {
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
         {/* Logo */}
-        <Link to="/dashboard" className="text-2xl font-bold text-slate-900 tracking-tighter hover:opacity-80 transition-opacity">
-          My<span className="text-[#18B49C]">School</span>.
-        </Link>
+        <div className="flex items-center gap-2">
+        <img src="/icons8-éducation-64 1.png" alt="Logo" className="h-10 w-10" />
+        <span className="text-lg font-bold text-[#370669]">EduLink</span>
+      </div>
 
         {/* Desktop Menu */}
         <div className="hidden md:flex items-center gap-8">
           <Link 
-            to="/dashboard" 
-            className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive('/dashboard') ? 'text-[#18B49C]' : 'text-gray-500 hover:text-slate-900'}`}
+            to="/studentDashboard" 
+            className={`flex items-center gap-2 text-sm font-medium transition-colors ${isActive('/studentDashboard') ? 'text-[#18B49C]' : 'text-gray-500 hover:text-slate-900'}`}
           >
             <LayoutDashboard size={18} /> Dashboard
           </Link>

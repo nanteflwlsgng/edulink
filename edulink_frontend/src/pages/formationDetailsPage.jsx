@@ -1,21 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   MapPin, Clock, Calendar, Globe, Monitor, 
   School, Mail, Phone, CheckCircle, HelpCircle, 
   ArrowLeft, Share2, Heart, Star, TrendingUp, AlertCircle,
-  ArrowRight, MessageSquare, Send, User, Lock,Hourglass, ReceiptText
+  ArrowRight, MessageSquare, Send, User, Lock,Hourglass, ReceiptText, Loader2
 } from "lucide-react";
 
 // --- IMPORTS ---
-import { useAuth } from "../context/AuthContext"; // Le contexte d'auth
+import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar"; 
-import StudentNavbar from "../components/StudentNavbar"; // Navbar Étudiant
-import { MOCK_DATA } from "../dataformation";
+import StudentNavbar from "../components/StudentNavbar";
 import Footer from "../components/Footer";
+import api from "../services/api";
 
-// --- SOUS-COMPOSANTS UI (Pour la propreté) ---
+const API_BASE_URL = "http://localhost:5000";
 
+// --- SOUS-COMPOSANTS UI (Inchangés) ---
 const RatingBar = ({ star, percentage, count }) => (
   <div className="flex items-center gap-3 text-xs mb-1.5 animate-fadeIn">
     <span className="w-8 font-bold text-gray-500 flex items-center gap-1">
@@ -60,7 +61,7 @@ const DetailItem = ({ icon: Icon, label, value, isLink }) => (
         <div className="flex flex-col overflow-hidden">
             <span className="text-[10px] text-gray-400 uppercase font-bold">{label}</span>
             {isLink ? (
-                <a href={`https://${value}`} target="_blank" rel="noreferrer" className="text-sm font-medium truncate hover:text-[#18B49C] hover:underline cursor-pointer">
+                <a href={value.startsWith('http') ? value : `https://${value}`} target="_blank" rel="noreferrer" className="text-sm font-medium truncate hover:text-[#18B49C] hover:underline cursor-pointer">
                     {value}
                 </a>
             ) : (
@@ -74,68 +75,114 @@ const DetailItem = ({ icon: Icon, label, value, isLink }) => (
 export default function FormationDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  // 1. RÉCUPÉRATION DE L'ÉTAT AUTH
-  const { user } = useAuth(); // "user" est null si invité, ou un objet si connecté
+  const { user } = useAuth();
 
   // États locaux
+  const [formation, setFormation] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const [isFavorite, setIsFavorite] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
-  
-  // Données
-  const rawFormation = MOCK_DATA.find((f) => f.id.toString() === id);
 
-  if (!rawFormation) return <div className="min-h-screen flex items-center justify-center text-slate-500">Formation introuvable.</div>;
+  // ✅ RECUPERATION DONNEES REELLES (API)
+  useEffect(() => {
+    const fetchFormation = async () => {
+      try {
+        setLoading(true);
+        // On récupère une formation par son ID (assurez-vous que cette route existe au backend)
+        // Sinon, on peut filtrer depuis la liste globale, mais la route dédiée est mieux.
+        // Exemple backend : router.get('/:id', ...)
+        
+        // Comme nous n'avons pas encore vu la route 'getOne', on suppose que vous filtrez côté client ou que la route existe.
+        // Si la route /formations/:id n'existe pas, il faut la créer au Backend.
+        // Pour l'instant, je vais chercher TOUTES les formations et filtrer (méthode de secours).
+        
+        const response = await api.get(`/formations/${id}`); 
+        // const allFormations = response.data.data || [];
+        const found = response.data.data;
 
-  // Enrichissement mock data
-  const formation = {
-    ...rawFormation,
-    updatedAt: "Mis à jour il y a 2 jours",
-    language: "Français & Anglais",
-    startDate: "15 Septembre 2025",
-    mode: "Hybride",
-    type: "Sélection de dossier",
-    end_date: "28 janvier 2026",
-    insertionRate: "94%", 
-    description: "Cette formation offre une approche complète et immersive, conçue pour former les leaders de demain. Le cursus allie théorie académique rigoureuse et pratique professionnelle intense à travers des stages garantis.",
-    schoolDescription: "Fondée en 1985, notre établissement est un pilier de l'excellence académique.",
-    schoolEmail: "admission@ecole.com",
-    schoolPhone: "+261 34 00 000 00",
-    schoolWebsite: "www.ecole.com",
-    creationDate: "1985",
-    price: "4 500 000 Ar",
-    paymentType: "/ an",
-    schoolImage: "https://images.unsplash.com/photo-1562774053-701939374585?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80", 
-    conditions: ["Baccalauréat", "Dossier", "Entretien"],
-    reviews: {
-        average: 4.8,
-        total: 128,
-        distribution: [
-            { star: 5, percentage: 75, count: 96 },
-            { star: 4, percentage: 15, count: 19 },
-            { star: 3, percentage: 8, count: 10 },
-            { star: 2, percentage: 2, count: 3 },
-            { star: 1, percentage: 0, count: 0 },
-        ],
-        items: [
-            { id: 1, name: "Lucas M.", date: "Il y a 2 jours", rating: 5, comment: "Excellent cursus.", avatarColor: "bg-blue-500" },
-            { id: 2, name: "Sarah K.", date: "Il y a 1 semaine", rating: 4, comment: "Contenu dense.", avatarColor: "bg-purple-500" }
-        ]
-    }
-  };
+        if (!found) {
+            setError("Formation introuvable");
+            setLoading(false);
+            return;
+        }
+
+        // MAPPING DES DONNÉES (Mélange API + Statique pour ce que vous voulez garder statique)
+        const mappedData = {
+            id: found.id_formation,
+            title: found.titre,
+            description: found.description,
+            price: `${found.prix} Ar`,
+            duration: `${found.duree} mois`,
+            category: found.categorie || "Général",
+            level: found.niveau || "Non spécifié",
+            
+            // --- Données ÉTABLISSEMENT (Dynamiques depuis la BDD) ---
+            school: found.ecole?.nom_etablissement || found.ecole?.nom || "École partenaire",
+            schoolDescription: found.ecole?.description || "Aucune description disponible pour cet établissement.",
+            schoolEmail: found.ecole?.email || "Non renseigné", // Si email dans le modèle
+            schoolPhone: found.ecole?.telephone || "Non renseigné",
+            schoolWebsite: found.ecole?.site_web || "Non renseigné",
+            creationDate: found.ecole?.date_fondation 
+                ? new Date(found.ecole.date_fondation).getFullYear() 
+                : "Non renseigné",
+            city: found.ecole?.adresse || "En ligne",
+            country: "Madagascar", // Statique ou depuis BDD si champ pays existe
+            
+            // Image École (Couverture établissement ou logo si pas de couverture)
+            schoolImage: found.ecole?.photo_etablissement 
+                ? `${API_BASE_URL}/${found.ecole.photo_etablissement}`
+                : "https://images.unsplash.com/photo-1562774053-701939374585?auto=format&fit=crop&w=1000&q=80",
+
+            // --- Données STATIQUES (Laissées comme demandé) ---
+            updatedAt: "Mis à jour il y a 2 jours",
+            language: found.langue || "Français & Anglais",
+            startDate: found.date_debut ? new Date(found.date_debut).toLocaleDateString() : "À définir",
+            mode: found.mode || "Hybride",
+            type: "Sélection de dossier",
+            end_date: found.date_fin ? new Date(found.date_fin).toLocaleDateString() : "À définir",
+            insertionRate: "94%", 
+            paymentType: "/ an",
+            conditions: found.conditions || ["Baccalauréat", "Dossier", "Entretien"], // On prend celles de la BDD si dispos
+            reviews: {
+                average: 4.8,
+                total: 128,
+                distribution: [
+                    { star: 5, percentage: 75, count: 96 },
+                    { star: 4, percentage: 15, count: 19 },
+                    { star: 3, percentage: 8, count: 10 },
+                    { star: 2, percentage: 2, count: 3 },
+                    { star: 1, percentage: 0, count: 0 },
+                ],
+                items: [
+                    { id: 1, name: "Lucas M.", date: "Il y a 2 jours", rating: 5, comment: "Excellent cursus.", avatarColor: "bg-blue-500" },
+                    { id: 2, name: "Sarah K.", date: "Il y a 1 semaine", rating: 4, comment: "Contenu dense.", avatarColor: "bg-purple-500" }
+                ]
+            }
+        };
+
+        setFormation(mappedData);
+        setLoading(false);
+
+      } catch (err) {
+        console.error(err);
+        setError("Erreur chargement");
+        setLoading(false);
+      }
+    };
+
+    fetchFormation();
+  }, [id]);
 
   // --- LOGIQUES D'INTERACTION ---
 
   const handleApply = () => {
-    // Si l'utilisateur est connecté, on l'envoie vers la page de candidature
-    // Si l'utilisateur n'est PAS connecté, on l'envoie se connecter, 
-    // puis on le redirigera vers la candidature grâce au 'state'
     if (user) {
         navigate(`/candidature/${id}`);
     } else {
-        // Le state 'from' permettra de rediriger l'utilisateur après le login
         navigate("/compte", { state: { from: `/candidature/${id}` } });
     }
 };
@@ -144,7 +191,6 @@ export default function FormationDetailsPage() {
     if (user) {
         setIsFavorite(!isFavorite);
     } else {
-        // Redirection vers login pour sauvegarder
         navigate("/compte", { state: { from: `/formations/${id}` } });
     }
   };
@@ -155,10 +201,13 @@ export default function FormationDetailsPage() {
     setReviewText("");
   };
 
+  // --- RENDER ---
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-[#18B49C]"/></div>;
+  if (error || !formation) return <div className="min-h-screen flex items-center justify-center text-slate-500">{error || "Formation introuvable."}</div>;
+
   return (
     <div className="min-h-screen text-slate-800 font-poppins selection:bg-[#18B49C] selection:text-white">
       
-      {/* 2. NAVBAR CONDITIONNELLE */}
       {user ? <StudentNavbar /> : <Navbar />}
 
       {/* Fil d'ariane / Retour */}
@@ -193,7 +242,6 @@ export default function FormationDetailsPage() {
                         <span>{formation.insertionRate} d'insertion</span>
                     </div>
 
-                    {/* BOUTON FAVORIS (Interactif si étudiant) */}
                     <button 
                         onClick={handleFavorite}
                         className={`flex items-center gap-2 px-4 py-1.5 rounded-lg transition-all duration-300 border ${
@@ -217,6 +265,7 @@ export default function FormationDetailsPage() {
                 <div className="flex items-center gap-4 group/school cursor-pointer">
                   <div className="w-14 h-14 rounded-2xl bg-white border border-gray-100 shadow-sm flex items-center justify-center text-3xl group-hover/school:scale-105 transition-transform">🏫</div>
                   <div>
+                    {/* NOM DYNAMIQUE DE L'ECOLE */}
                     <h3 className="font-bold text-slate-900 text-lg group-hover/school:text-[#370669] transition-colors">{formation.school}</h3>
                     <div className="flex items-center gap-2 text-gray-500 text-sm">
                       <MapPin className="w-4 h-4 text-[#18B49C]" /> {formation.city}, {formation.country}
@@ -232,7 +281,7 @@ export default function FormationDetailsPage() {
             </div>
           </div>
 
-          {/* --- DETAILS --- */}
+          {/* --- DETAILS (Statique sauf dates) --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-1 h-6 bg-[#18B49C] rounded-full"></div>
@@ -262,26 +311,20 @@ export default function FormationDetailsPage() {
             </div>
           </div>
 
-          {/* --- SECTION AVIS (Dynamique) --- */}
+          {/* --- AVIS (Statique) --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100">
              <div className="flex justify-between items-center mb-8">
                 <div className="flex items-center gap-3">
                    <div className="w-1 h-6 bg-[#ffb400] rounded-full"></div>
                    <h3 className="text-xl font-bold text-slate-900">Avis étudiants</h3>
                 </div>
-                
-                {/* BOUTON REDIGER : Seulement si user connecté */}
-                {user ? (
+                {user && (
                     <button 
                         onClick={() => setShowReviewForm(!showReviewForm)}
                         className="text-xs font-bold text-[#370669] bg-[#370669]/5 px-4 py-2 rounded-lg hover:bg-[#370669] hover:text-white transition-all flex items-center gap-2"
                     >
                         <MessageSquare className="w-3.5 h-3.5" /> {showReviewForm ? 'Annuler' : 'Rédiger un avis'}
                     </button>
-                ) : (
-                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
-                        <Lock className="w-3 h-3" /> Connectez-vous pour donner votre avis
-                    </div>
                 )}
              </div>
 
@@ -298,39 +341,12 @@ export default function FormationDetailsPage() {
                 </div>
              </div>
 
-             {/* FORMULAIRE : Visible seulement si user connecté */}
-             {user && (
-                 <div className={`overflow-hidden transition-all duration-500 ease-in-out ${showReviewForm ? 'max-h-[500px] opacity-100 mb-8' : 'max-h-0 opacity-0'}`}>
-                    <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200">
-                        <h4 className="font-bold text-slate-900 mb-4 text-sm">Votre expérience</h4>
-                        <div className="flex gap-2 mb-4">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                                <button key={star} onClick={() => setUserRating(star)} className="focus:outline-none transition-transform active:scale-90">
-                                    <Star className={`w-8 h-8 ${star <= userRating ? 'text-[#ffb400] fill-[#ffb400]' : 'text-gray-300'}`} />
-                                </button>
-                            ))}
-                        </div>
-                        <textarea 
-                            value={reviewText}
-                            onChange={(e) => setReviewText(e.target.value)}
-                            className="w-full p-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#370669]/20 text-sm mb-4 min-h-[100px]" 
-                            placeholder="Qu'avez-vous pensé de cette formation ?"
-                        ></textarea>
-                        <div className="flex justify-end">
-                            <button onClick={handleSubmitReview} className="bg-[#18B49C] text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-[#159c87] flex items-center gap-2">
-                                <Send className="w-3.5 h-3.5" /> Publier
-                            </button>
-                        </div>
-                    </div>
-                 </div>
-             )}
-
              <div className="space-y-2">
                 {formation.reviews.items.map((review) => <ReviewCard key={review.id} {...review} />)}
              </div>
           </div>
 
-          {/* --- INFO ECOLE --- */}
+          {/* --- INFO ECOLE (✅ DYNAMIQUE MAINTENANT) --- */}
           <div className="bg-white rounded-[2rem] p-8 shadow-[0_10px_30px_rgba(0,0,0,0.02)] border border-gray-100 overflow-hidden">
              <div className="flex items-center gap-3 mb-6">
                 <div className="w-1 h-6 bg-[#18B49C] rounded-full"></div>
@@ -346,9 +362,11 @@ export default function FormationDetailsPage() {
             </div>
             <div className="flex flex-col gap-8">
                 <div className="prose prose-sm max-w-none text-gray-600 leading-relaxed">
+                    {/* Description de l'école */}
                     <p className="border-l-4 border-gray-100 pl-4 italic font-sans text-base">"{formation.schoolDescription}"</p>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-gray-100 pt-8">
+                    {/* Contacts de l'école */}
                     <DetailItem icon={Mail} label="Service Admission" value={formation.schoolEmail} />
                     <DetailItem icon={Phone} label="Téléphone" value={formation.schoolPhone} />
                     <DetailItem icon={School} label="Fondation" value={formation.creationDate} />
@@ -365,7 +383,6 @@ export default function FormationDetailsPage() {
                 
                 <div className="bg-white rounded-[2rem] p-6 shadow-[0_20px_60px_rgba(55,6,105,0.08)] border border-[#370669]/10 z-20">
                     
-                    {/* Badge Identité */}
                     {user ? (
                         <div className="flex items-center justify-center gap-2 bg-green-50 text-green-700 text-[10px] font-bold py-2 rounded-lg mb-4 border border-green-100">
                             <User className="w-3 h-3" /> Connecté en tant que {user.firstName}
@@ -404,19 +421,7 @@ export default function FormationDetailsPage() {
                             {"Je postule maintenant"} 
                             <ArrowRight className="w-4 h-4" />
                         </button>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                            <button className="col-span-2 bg-gray-50 text-slate-600 py-3 rounded-xl font-semibold text-xs hover:bg-gray-100 hover:text-[#370669] transition-colors flex items-center justify-center gap-2">
-                                <Share2 className="w-3.5 h-3.5" /> Partager la fiche
-                            </button>
-                        </div>
                     </div>
-                    
-                    {!user && (
-                        <p className="text-center text-[10px] text-gray-400 mt-4">
-                            Aucun paiement requis pour la pré-inscription.
-                        </p>
-                    )}
                 </div>
 
                 <div className="bg-gradient-to-br from-[#370669] to-[#250346] rounded-[2rem] p-6 text-white relative overflow-hidden shadow-lg">

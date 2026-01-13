@@ -20,6 +20,8 @@ router.post("/",
   uploadFormationImage.single('image'), 
   (req, res) => formationController.creerFormation(req, res)
 );
+router.get('/mine', authenticate, isEcole, (req, res) => formationController.listerMesFormations(req, res));
+router.get('/:id', (req, res) => formationController.getOneFormation(req, res));
 
 router.get("/", (req, res) => formationController.listerFormations(req, res));
 /**
@@ -68,6 +70,8 @@ router.get("/", (req, res) => formationController.listerFormations(req, res));
  *       400:
  *         description: Erreur lors de l'ajout de la session
  */
+
+
 router.post('/:id_formation/sessions', formationController.ajouterSession);
 
 /**

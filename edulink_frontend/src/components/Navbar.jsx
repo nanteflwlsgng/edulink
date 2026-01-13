@@ -14,7 +14,6 @@ export default function Navbar() {
       <div className="hidden md:flex gap-4 text-gray-500 text-base font-medium">
         <Link to="/" className={`hover:text-[#370669] transition-colors ${isActive('/') ? 'text-[#370669] font-semibold' : 'text-gray-500 hover:text-[#370669]'}`}>Accueil</Link>
         <Link to="/formations" className={`hover:text-[#370669] transition-colors ${isActive('/formations') ? 'text-[#370669] font-semibold' : 'text-gray-500 hover:text-[#370669]'}`}>Formations</Link>
-        <Link to="/etablissements" className={`hover:text-[#370669] transition-colors ${isActive('/etablissements') ? 'text-[#370669] font-semibold' : 'text-gray-500 hover:text-[#370669]'}`}>Établissements</Link>
       </div>
 
       {/* Bouton Mon Compte -> Lien vers la page */}
